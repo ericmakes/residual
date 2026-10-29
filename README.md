@@ -7,12 +7,12 @@ The wedge Trybe cannot take without rebuilding: attribution on **ad-platform spe
 Five promises, each mapped to a Trybe gap:
 
 1. **Open ledger.** Daily spend by ad ID, visible to brand and creator.
-2. **Approved means paid.** Approval starts a 21-day run-or-pay clock; the brand can withdraw within 48h at no cost, after which the clock keys on real spend (min $50), so launch-then-pause does not stop it. Kill fee floor $10 on any % rule.
+2. **Approved means paid.** Approval starts a 21-day run-or-pay clock; the brand can withdraw within 48h, after which the clock keys on real spend (min $50), so launch-then-pause does not stop it. Residual funds the $10 kill fee itself, so approving costs the brand nothing.
 3. **Pooled creators.** A brief goes live to matching creators in minutes.
 4. **Compliance gate.** Per-market base checklist + per-vertical items, snapshotted on each submission; Approve stays locked until every item is ticked; Revise names every unticked item; every decision is logged with reviewer, time and the checklist state.
 5. **Many briefs, agency workspaces.** One program, many pay rules.
 
-Pricing (brand-favourable, since brands are the scarce side): brands pay 0.75% of ad spend on % rules, capped at $5,000/brand/mo (Trybe: 1.25%, uncapped); creators pay 2.5% of earnings, nothing on kill fees; 1.5% on flat creator pay; two free revisions; buyout of a winning video at 3× its trailing 30-day share; compliance desk $25/video or $750/mo per market; agency workspace $199/mo. Unit economics in `docs/teardown.md`: ~78% gross margin, break-even near $4M/mo of spend.
+Pricing (brand-favourable, since brands are the scarce side): brands pay $0 on their first $25,000 of spend, then 0.75% capped at $5,000/brand/mo (Trybe: 1.25% from the first dollar, uncapped); Residual funds the $10 kill fee; perpetual licence to a video once the creator has earned $250 from it (buyout at 3× trailing 30-day share before that); 10 submissions in 7 days or the month's fee is waived; two free revisions. Creators pay 5% of earnings, nothing on kill fees. Also: 1.5% on flat creator pay; compliance desk $25/video or $750/mo per market; agency workspace $199/mo. Unit economics in `docs/teardown.md`: ~79% gross margin, break-even near $3.4M/mo of spend.
 
 ## What is here
 
