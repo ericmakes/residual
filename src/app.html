@@ -117,8 +117,10 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid v
 <script>
 // ---------- state ----------
 const START = new Date(2026,9,29); // 29 Oct 2026
-const FEE = 0.01;                  // Residual fee: 1% of ad spend
-const KILL_DAYS = 14;
+const FEE = 0.0075;                // Residual brand fee: 0.75% of ad spend (capped at $5,000/brand/mo in the real product)
+const CFEE = 0.025;                // Residual creator fee: 2.5% of creator earnings, never on kill fees
+const KILL_DAYS = 21;              // run-or-pay clock
+const WITHDRAW_DAYS = 2;           // a brand can withdraw an approval within 48h with no kill fee
 const KILL_FLOOR = 10;             // minimum kill fee on any % of ad spend rule: approved can never mean unpaid
 function logAudit(s,action,extra){ (s.audit=s.audit||[]).push(Object.assign({day:S.day,action,by:(S.reviewer||"unnamed reviewer")+" (brand)",checks:s.checks.slice()},extra||{})); }
 const MIN_RUN_SPEND = 50;          // a launch only stops the kill clock once this much has actually been spent on the video
@@ -145,17 +147,17 @@ function defaultState(){
   return {
     day:0, role:"brand", view:"briefs", lastPayoutDay:0,
     briefs:[
-      {id:"b1",brand:"Nimbus Pay",vertical:"fintech",product:"Nimbus Pay app (instant transfers)",markets:["CO","MX"],hooks:["Send money to Mexico in 10 seconds","I stopped paying remittance fees","The notification sound that means rent is paid"],rule:{type:"pct",pct:10,flat:0,cap:400,kill:25},dailyBudget:650,open:true},
-      {id:"b2",brand:"Kettle & Oak",vertical:"consumer",product:"Cold-brew concentrate, 1L",markets:["US","AU"],hooks:["My 6am ritual in 30 seconds","Coffee shop maths: $7 vs 90c","Why I quit pods"],rule:{type:"flat+pct",pct:8,flat:60,cap:0,kill:25},dailyBudget:420,open:true},
+      {id:"b1",brand:"Nimbus Pay",vertical:"fintech",product:"Nimbus Pay app (instant transfers)",markets:["CO","MX"],hooks:["Send money to Mexico in 10 seconds","I stopped paying remittance fees","The notification sound that means rent is paid"],rule:{type:"pct",pct:10,flat:0,cap:400,kill:15},dailyBudget:650,open:true},
+      {id:"b2",brand:"Kettle & Oak",vertical:"consumer",product:"Cold-brew concentrate, 1L",markets:["US","AU"],hooks:["My 6am ritual in 30 seconds","Coffee shop maths: $7 vs 90c","Why I quit pods"],rule:{type:"flat+pct",pct:8,flat:60,cap:0,kill:15},dailyBudget:420,open:true},
       {id:"b3",brand:"Nimbus Pay",vertical:"fintech",product:"Nimbus Pay cashback card",markets:["CO"],hooks:["Where my cashback went this month","The card that pays for my bus pass"],rule:{type:"flat",pct:0,flat:75,cap:0,kill:0},dailyBudget:0,open:false}
     ],
     subs:[
       {id:"s1",briefId:"b1",creatorId:"c1",hook:0,file:"sofia_nimbus_remesa_v2.mp4",submittedDay:-6,status:"running",approvedDay:-5,launchedDay:-4,platform:"Meta",adId:"120212334455667",ads:[{platform:"Meta",adId:"120212334455667",set:"CO broad"},{platform:"Meta",adId:"120212334455901",set:"CO retargeting"}],market:"CO",checks:[true,true,true,true],spend:[],paid:0},
       {id:"s2",briefId:"b1",creatorId:"c3",hook:2,file:"vale_notificacion.mp4",submittedDay:-4,status:"approved",approvedDay:-3,launchedDay:null,platform:null,adId:null,market:"CO",checks:[true,true,true,true],spend:[],paid:0},
       {id:"s3",briefId:"b1",creatorId:"c1",hook:1,file:"sofia_fees_mx.mp4",submittedDay:-1,status:"review",approvedDay:null,launchedDay:null,platform:null,adId:null,market:"MX",checks:[false,false,false,false],spend:[],paid:0},
-      {id:"s4",briefId:"b2",creatorId:"c2",hook:1,file:"marcus_coffee_maths.mp4",submittedDay:-9,status:"running",approvedDay:-8,launchedDay:-8,platform:"TikTok",adId:"1812233445566778899",ads:[{platform:"TikTok",adId:"1812233445566778899",set:"US Spark"}],market:"US",checks:[true,true,true],spend:[],paid:0,flatPaid:60},
+      {id:"s4",briefId:"b2",creatorId:"c2",hook:1,file:"marcus_coffee_maths.mp4",submittedDay:-9,status:"running",approvedDay:-8,launchedDay:-8,platform:"TikTok",adId:"1812233445566778899",ads:[{platform:"TikTok",adId:"1812233445566778899",set:"US Spark"}],market:"US",checks:[true,true,true],spend:[],paid:0,flatPaid:58.5},
       {id:"s5",briefId:"b2",creatorId:"c4",hook:0,file:"dev_6am.mp4",submittedDay:-2,status:"revise",approvedDay:null,launchedDay:null,platform:null,adId:null,market:"US",checks:[false,true,true],note:"#ad disclosure in first 3 seconds",audit:[{day:-1,action:"revise requested",by:"Priya (brand reviewer)",checks:[false,true,true],note:"#ad disclosure in first 3 seconds"}],spend:[],paid:0},
-      {id:"s6",briefId:"b3",creatorId:"c3",hook:1,file:"vale_buspass.mp4",submittedDay:-12,status:"approved",approvedDay:-11,launchedDay:null,platform:null,adId:null,market:"CO",checks:[true,true,true,true],spend:[],paid:0,flatPaid:75}
+      {id:"s6",briefId:"b3",creatorId:"c3",hook:1,file:"vale_buspass.mp4",submittedDay:-12,status:"approved",approvedDay:-11,launchedDay:null,platform:null,adId:null,market:"CO",checks:[true,true,true,true],spend:[],paid:0,flatPaid:73.125}
     ],
     reviewer:"",
     ledger:[] // {day, subId, kind:'spend'|'kill'|'payout', amount, creatorShare, fee}
@@ -174,7 +176,7 @@ function seedHistory(st){
     }
   }
   // flat components already paid on approval for seeded running videos
-  for(const s of st.subs){ if(s.flatPaid) st.ledger.push({day:s.approvedDay,subId:s.id,kind:"flat",amount:s.flatPaid,creatorShare:s.flatPaid,fee:s.flatPaid*0.015}); }
+  for(const s of st.subs){ if(s.flatPaid){ const gross=s.flatPaid/(1-CFEE); st.ledger.push({day:s.approvedDay,subId:s.id,kind:"flat",amount:gross,creatorShare:s.flatPaid,fee:gross*0.015,cfee:gross*CFEE}); } }
   // the last weekly payout ran 6 days ago, so the next one is tomorrow (Fri)
   st.lastPayoutDay=-6;
   for(const s of st.subs){
@@ -194,11 +196,11 @@ function addSpend(st,s,day,total){
   const weights=ads.map((a,i)=>0.6+pseudo(day+i,s.id+i)*0.8); const wsum=weights.reduce((x,y)=>x+y,0);
   ads.forEach((ad,i)=>{
     const amt=Math.round(total*weights[i]/wsum); if(!amt) return;
-    let share=shareFor(b,amt);
-    if(b.rule.cap){ const soFar=s.spend.reduce((a,x)=>a+x.share,0); share=Math.max(0,Math.min(share,b.rule.cap-soFar)); }
-    const fee=amt*FEE;
-    s.spend.push({day,amt,share,fee,adId:ad.adId,platform:ad.platform});
-    st.ledger.push({day,subId:s.id,kind:"spend",amount:amt,creatorShare:share,fee,adId:ad.adId,platform:ad.platform});
+    let gross=shareFor(b,amt);
+    if(b.rule.cap){ const soFar=s.spend.reduce((a,x)=>a+(x.gross||x.share),0); gross=Math.max(0,Math.min(gross,b.rule.cap-soFar)); }
+    const cfee=gross*CFEE, share=gross-cfee, fee=amt*FEE;
+    s.spend.push({day,amt,gross,share,cfee,fee,adId:ad.adId,platform:ad.platform});
+    st.ledger.push({day,subId:s.id,kind:"spend",amount:amt,creatorShare:share,fee,cfee,adId:ad.adId,platform:ad.platform});
   });
 }
 let S;
@@ -259,7 +261,7 @@ function approve(subId){
   const s=S.subs.find(x=>x.id===subId); if(!s.checks.every(Boolean)) return;
   s.status="approved"; s.approvedDay=S.day; s.note=null; logAudit(s,"approved");
   const b=brief(S,s.briefId);
-  if(b.rule.flat){ s.flatPaid=b.rule.flat; S.ledger.push({day:S.day,subId:s.id,kind:"flat",amount:b.rule.flat,creatorShare:b.rule.flat,fee:b.rule.flat*0.015}); }
+  if(b.rule.flat){ s.flatPaid=b.rule.flat*(1-CFEE); S.ledger.push({day:S.day,subId:s.id,kind:"flat",amount:b.rule.flat,creatorShare:s.flatPaid,fee:b.rule.flat*0.015,cfee:b.rule.flat*CFEE}); }
   save(); render(); toast(`Approved. ${b.rule.kill?`Run it within ${KILL_DAYS} days or the ${fmt(b.rule.kill)} kill fee pays out.`:""}`);
 }
 function revise(subId){
@@ -274,6 +276,7 @@ function reject(subId){
   if(!sel||!sel.value){ toast("Pick a rejection reason first. The creator sees it."); return; }
   s.status="rejected"; s.note=sel.value; logAudit(s,"rejected",{note:s.note}); save(); render();
 }
+function withdraw(subId){ const s=S.subs.find(x=>x.id===subId); if(S.day-s.approvedDay>=WITHDRAW_DAYS||s.status!=="approved") return; s.status="review"; s.approvedDay=null; logAudit(s,"approval withdrawn",{note:`within ${WITHDRAW_DAYS*24}h, no kill fee`}); save(); render(); toast("Approval withdrawn. The video is back in review and no kill fee applies."); }
 function toggleBrief(briefId){ const b=brief(S,briefId); b.open=!b.open; save(); render(); toast(b.open?"Brief reopened to the pool":"Brief closed. Running videos keep running; no new submissions."); }
 function launch(subId,platform){
   const s=S.subs.find(x=>x.id===subId); s.ads=s.ads||[];
@@ -342,7 +345,7 @@ function vBriefs(){
   <div class="tiles">
     <div class="tile"><small>Ad spend · 30d</small><b>${fmt(spend30)}</b><span class="d">across ${live.length} running videos</span></div>
     <div class="tile"><small>Creator residuals · 30d</small><b>${fmt(share30)}</b><span class="d">${spend30?Math.round(share30/spend30*100):0}% effective rate</span></div>
-    <div class="tile"><small>Residual fee · 30d</small><b>${fmt2(fee30)}</b><span class="d">1.0% of ad spend</span></div>
+    <div class="tile"><small>Residual fee · 30d</small><b>${fmt2(fee30)}</b><span class="d">0.75% of ad spend</span></div>
     <div class="tile"><small>Awaiting review</small><b>${S.subs.filter(s=>s.status==="review").length}</b><span class="d">${S.subs.filter(s=>s.status==="approved").length} approved, not yet run</span></div>
   </div>
   <h2>Briefs</h2>
@@ -368,7 +371,7 @@ function vInbox(){
       ${s.status==="revise"?`<div class="gate">Revise sent ${s.note?`naming: <b>${s.note}</b>`:""}. Waiting on the creator.</div>`:`
       <div class="ex">Compliance checklist · ${s.market} · ${b.vertical}</div>
       <div class="grid2">${checks.map((t,i)=>`<label class="check ${s.checks[i]?"ok":""}"><input type="checkbox" id="ck-${s.id}-${i}" ${s.checks[i]?"checked":""} onchange="toggleCheck('${s.id}',${i},this.checked)"> ${t}</label>`).join("")}</div>
-      <div class="gate ${all?"ok":""}">${all?"Gate passed. Approving starts the 14-day run-or-pay clock.":`${s.checks.filter(Boolean).length} of ${checks.length} ticked. Approve stays locked until the gate passes.`}</div>
+      <div class="gate ${all?"ok":""}">${all?`Gate passed. Approving starts the ${KILL_DAYS}-day run-or-pay clock (withdrawable for ${WITHDRAW_DAYS*24}h).`:`${s.checks.filter(Boolean).length} of ${checks.length} ticked. Approve stays locked until the gate passes.`}</div>
       <div class="row"><button class="btn pri" ${all?"":"disabled"} onclick="approve('${s.id}')">Approve</button><button class="btn" onclick="revise('${s.id}')">Revise (names every unticked item)</button><span class="row" style="gap:4px"><select id="rj-${s.id}" style="width:auto;font-size:12px;padding:5px 8px"><option value="">Reject reason…</option>${REJECT_REASONS.map(r=>`<option>${r}</option>`).join("")}</select><button class="btn" onclick="reject('${s.id}')">Reject</button></span></div>`}
     </div>`;}).join(""):`<div class="empty">Inbox is clear. Switch to the Creator role and submit a video to see the gate in action.</div>`}`;
 }
@@ -378,7 +381,7 @@ function vLaunch(){
   return `<h1>Launch</h1><p class="sub">Approved videos sit here until they run. Launching ties one or more ad IDs to the video (a video usually runs in several ad sets); the spend sync writes one ledger line per ad ID per day. Pausing before ${fmt(MIN_RUN_SPEND)} has been spent does not stop the run-or-pay clock.</p>
   <div class="tw"><table><thead><tr><th>Video and ad IDs</th><th>Creator</th><th>Status and clock</th><th class="num">Spend to date</th><th>Actions</th></tr></thead><tbody>
   ${list.map(s=>{const b=brief(S,s.briefId),c=creator(s.creatorId),dl=daysLeft(s);
-    return `<tr><td><b>${s.file}</b><br><span style="color:var(--muted);font-size:12px">${b.brand} · ${b.hooks[s.hook]}</span><div style="margin-top:6px">${(s.ads&&s.ads.length)?s.ads.map(a=>`<span class="money" style="font-size:12px;display:block">${a.platform} · ${a.adId}${a.set?` <span style="color:var(--muted)">${a.set}</span>`:""}</span>`).join(""):""}</div></td><td>${c.name}</td><td>${statusPill(s)}<div style="margin-top:6px">${s.status==="approved"&&b.rule.type==="flat"?`<span class="pill good">${fmt(b.rule.flat)} paid on approval · run when ready</span>`:s.status==="approved"?`<span class="pill ${dl<=3?"bad":"warn"}">${dl} day${dl===1?"":"s"} to run or pay ${fmt(b.rule.kill)}</span>`:(s.status==="running"||s.status==="paused")&&spendTotal(s)<MIN_RUN_SPEND&&b.rule.kill>0?`<span class="pill warn">${fmt(spendTotal(s))} of ${fmt(MIN_RUN_SPEND)} min spend · ${dl} day${dl===1?"":"s"} left</span>`:s.status==="killed"?`<span class="pill bad">${fmt(b.rule.kill)} kill fee${s.paid>=earned(s)-0.005?" paid":` · pays ${dstr(nextPayoutDay())}`}</span>`:"—"}</div></td><td class="num">${fmt(spendTotal(s))}</td><td><div class="row">${s.status==="approved"?["Meta","TikTok","Google"].map(p=>`<button class="btn sm pri" onclick="launch('${s.id}','${p}')">${p}</button>`).join(""):s.status==="running"?`<button class="btn sm" onclick="pause('${s.id}')">Pause</button>${["Meta","TikTok","Google"].map(p=>`<button class="btn sm" title="Attach another ad ID on ${p}" onclick="launch('${s.id}','${p}')">+${p}</button>`).join("")}`:s.status==="paused"?`<button class="btn sm" onclick="resume('${s.id}')">Resume</button>`:""}</div></td></tr>`;}).join("")}
+    return `<tr><td><b>${s.file}</b><br><span style="color:var(--muted);font-size:12px">${b.brand} · ${b.hooks[s.hook]}</span><div style="margin-top:6px">${(s.ads&&s.ads.length)?s.ads.map(a=>`<span class="money" style="font-size:12px;display:block">${a.platform} · ${a.adId}${a.set?` <span style="color:var(--muted)">${a.set}</span>`:""}</span>`).join(""):""}</div></td><td>${c.name}</td><td>${statusPill(s)}<div style="margin-top:6px">${s.status==="approved"&&b.rule.type==="flat"?`<span class="pill good">${fmt(b.rule.flat)} paid on approval · run when ready</span>`:s.status==="approved"?`<span class="pill ${dl<=3?"bad":"warn"}">${dl} day${dl===1?"":"s"} to run or pay ${fmt(b.rule.kill)}</span>`:(s.status==="running"||s.status==="paused")&&spendTotal(s)<MIN_RUN_SPEND&&b.rule.kill>0?`<span class="pill warn">${fmt(spendTotal(s))} of ${fmt(MIN_RUN_SPEND)} min spend · ${dl} day${dl===1?"":"s"} left</span>`:s.status==="killed"?`<span class="pill bad">${fmt(b.rule.kill)} kill fee${s.paid>=earned(s)-0.005?" paid":` · pays ${dstr(nextPayoutDay())}`}</span>`:"—"}</div></td><td class="num">${fmt(spendTotal(s))}</td><td><div class="row">${s.status==="approved"?["Meta","TikTok","Google"].map(p=>`<button class="btn sm pri" onclick="launch('${s.id}','${p}')">${p}</button>`).join("")+(S.day-s.approvedDay<WITHDRAW_DAYS&&b.rule.kill?`<button class="btn sm" title="Within ${WITHDRAW_DAYS*24}h of approving, no kill fee" onclick="withdraw('${s.id}')">Withdraw</button>`:""):s.status==="running"?`<button class="btn sm" onclick="pause('${s.id}')">Pause</button>${["Meta","TikTok","Google"].map(p=>`<button class="btn sm" title="Attach another ad ID on ${p}" onclick="launch('${s.id}','${p}')">+${p}</button>`).join("")}`:s.status==="paused"?`<button class="btn sm" onclick="resume('${s.id}')">Resume</button>`:""}</div></td></tr>`;}).join("")}
   </tbody></table></div>`;
 }
 
@@ -386,9 +389,9 @@ function vLedger(){
   const rows=S.ledger.slice().sort((a,b)=>b.day-a.day).slice(0,60);
   const totSpend=S.ledger.filter(l=>l.kind==="spend").reduce((a,l)=>a+l.amount,0);
   const totShare=S.ledger.filter(l=>l.creatorShare).reduce((a,l)=>a+l.creatorShare,0);
-  const totFee=S.ledger.filter(l=>l.fee).reduce((a,l)=>a+l.fee,0);
+  const totFee=S.ledger.filter(l=>l.fee||l.cfee).reduce((a,l)=>a+(l.fee||0)+(l.cfee||0),0);
   return `<h1>Ledger</h1><p class="sub">One line per video per day, straight from the ad platform's reported spend. Creators see the same lines for their own videos. Next payout run ${dstr(nextPayoutDay())}.</p>
-  <div class="tiles"><div class="tile"><small>Total ad spend</small><b>${fmt(totSpend)}</b></div><div class="tile"><small>Creator residuals accrued</small><b>${fmt2(totShare)}</b></div><div class="tile"><small>Residual fees</small><b>${fmt2(totFee)}</b><span class="d">1.0% of spend, 1.5% of flat pay</span></div><div class="tile"><small>Outstanding to creators</small><b>${fmt2(S.subs.reduce((a,s)=>a+earned(s)-s.paid,0))}</b><span class="d">pays ${dstr(nextPayoutDay())}</span></div></div>
+  <div class="tiles"><div class="tile"><small>Total ad spend</small><b>${fmt(totSpend)}</b></div><div class="tile"><small>Creator residuals accrued</small><b>${fmt2(totShare)}</b></div><div class="tile"><small>Residual fees</small><b>${fmt2(totFee)}</b><span class="d">brand 0.75% of spend + creator 2.5% of earnings</span></div><div class="tile"><small>Outstanding to creators</small><b>${fmt2(S.subs.reduce((a,s)=>a+earned(s)-s.paid,0))}</b><span class="d">pays ${dstr(nextPayoutDay())}</span></div></div>
   <div class="tw"><table><thead><tr><th>Date</th><th>Entry</th><th>Video</th><th class="num">Ad spend</th><th class="num">Creator share</th><th class="num">Fee</th></tr></thead><tbody>
   ${rows.map(l=>{const s=l.subId?S.subs.find(x=>x.id===l.subId):null;
     const label=l.kind==="spend"?`Spend sync · ${l.platform||s.platform} <span class="money" style="color:var(--muted);font-size:11px">${l.adId||s.adId||""}</span>`:l.kind==="kill"?`<span class="pill bad">Kill fee</span>`:l.kind==="flat"?`<span class="pill">Flat fee on approval</span>`:`<span class="pill good">Weekly payout · Stripe</span>`;
@@ -432,10 +435,10 @@ function vNew(){
       <label>% of ad spend <input id="nb-pct" name="pct" type="number" min="0" max="50" value="10"></label>
       <label>Flat fee (USD) <input id="nb-flat" name="flat" type="number" min="0" value="0"></label>
       <label>Cap per video (USD, 0 = none) <input id="nb-cap" name="cap" type="number" min="0" value="0"></label>
-      <label>Kill fee if not run in 14 days (USD, min $10 on % rules) <input id="nb-kill" name="kill" type="number" min="0" value="25"></label>
+      <label>Kill fee if not run in ${KILL_DAYS} days (USD, min $${KILL_FLOOR} on % rules) <input id="nb-kill" name="kill" type="number" min="0" value="15"></label>
       <label>Daily budget you intend to run (USD) <input id="nb-budget" name="budget" type="number" min="0" value="300"></label>
     </div>
-    <div class="row"><button class="btn pri" type="submit">Publish brief to the pool</button><span style="color:var(--muted);font-size:12px">Residual fee: 1.0% of ad spend on % rules, 1.5% of flat pay. Nothing on kill fees.</span></div>
+    <div class="row"><button class="btn pri" type="submit">Publish brief to the pool</button><span style="color:var(--muted);font-size:12px">Residual charges you 0.75% of ad spend on % rules (capped at $5,000/mo), 1.5% of flat pay, nothing on kill fees. Creators pay 2.5% of what they earn.</span></div>
   </form>`;
 }
 
@@ -445,7 +448,7 @@ function vFeed(){
   return `<h1>Brief feed</h1><p class="sub">You are ${me.name} ${me.handle}, markets ${me.markets.join(" and ")}, approval rate ${me.approval}%. Only briefs for your markets show here. The pay rule and the checklist are visible before you film.</p>
   <div class="cards">${list.map(b=>{const mk=b.markets.filter(m=>me.markets.includes(m));
     return `<div class="card"><span class="pill brand">${b.brand}</span><h3>${b.product}</h3><span class="rule">${ruleText(b.rule)}${b.rule.kill?` · ${fmt(b.rule.kill)} kill fee if approved but not run`:""}</span>
-    <div class="meta">${b.rule.pct?(()=>{const est=b.dailyBudget/3*b.rule.pct/100*30;const capped=b.rule.cap&&est>b.rule.cap;return `Brand runs about ${fmt(b.dailyBudget)}/day across its running videos; at ${b.rule.pct}% one video carrying a third of that earns ~${fmt(capped?b.rule.cap:est)}${capped?` (the ${fmt(b.rule.cap)} lifetime cap, reached in ~${Math.ceil(b.rule.cap/(est/30))} days)`:"/month"}.`;})():`Pays ${fmt(b.rule.flat)} when approved.`}</div>
+    <div class="meta">${b.rule.pct?(()=>{const est=b.dailyBudget/3*b.rule.pct/100*30;const capped=b.rule.cap&&est>b.rule.cap;return `Brand runs about ${fmt(b.dailyBudget)}/day across its running videos; at ${b.rule.pct}% one video carrying a third of that earns ~${fmt((capped?b.rule.cap:est)*(1-CFEE))} after Residual's 2.5%${capped?` (the ${fmt(b.rule.cap)} lifetime cap, reached in ~${Math.ceil(b.rule.cap/(est/30))} days)`:"/month"}.`;})():`Pays ${fmt(b.rule.flat)} when approved.`}</div>
     <form onsubmit="claimAndSubmit(event,'${b.id}')" style="display:grid;gap:8px">
       <label>Hook <select id="hk-${b.id}" name="hook">${b.hooks.map((h,i)=>`<option value="${i}">${h}</option>`).join("")}</select></label>
       <label>Market <select id="mk-${b.id}" name="market">${mk.map(m=>`<option>${m}</option>`).join("")}</select></label>
@@ -456,7 +459,7 @@ function vFeed(){
 
 function vMine(){
   const list=S.subs.filter(s=>s.creatorId==="c1").sort((a,b)=>b.submittedDay-a.submittedDay);
-  return `<h1>My submissions</h1><p class="sub">Status is never a black box: a revise names the exact checklist item, and an approval starts a 14-day clock you can see.</p>
+  return `<h1>My submissions</h1><p class="sub">Status is never a black box: a revise names the exact checklist item, and an approval starts a ${KILL_DAYS}-day clock you can see.</p>
   <div class="tw"><table><thead><tr><th>Video</th><th>Brief</th><th>Status</th><th>What happens next</th><th class="num">Earned</th></tr></thead><tbody>
   ${list.map(s=>{const b=brief(S,s.briefId),dl=daysLeft(s);
     const next=s.status==="review"?"Brand is reviewing against the checklist":s.status==="revise"?`Fix: <b>${s.note}</b> <button class="btn sm" onclick="resubmit('${s.id}')">Re-submit</button>`:s.status==="approved"?`Brand has ${dl} day${dl===1?"":"s"} to run it, or you get ${fmt(b.rule.kill)}`:s.status==="running"?`Live on ${s.platform}. Yesterday's spend ${fmt(yesterday(s))}`:s.status==="killed"?`Kill fee ${fmt(b.rule.kill)} paid`:s.status==="rejected"?`Reason: ${s.note}`:"—";
