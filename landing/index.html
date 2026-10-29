@@ -284,7 +284,7 @@ footer a{color:var(--ink-2)}
   </div>
   <div class="rec">
     <div>
-      <label>Monthly ad spend through creator videos<output id="oSpend">$50,000</output><input type="range" id="spend" min="5000" max="500000" step="5000" value="50000"></label>
+      <label>Monthly ad spend through creator videos<output id="oSpend">$50,000</output><input type="range" id="spend" min="5000" max="1000000" step="5000" value="50000"></label>
       <label>Creator share of ad spend<output id="oRate">10%</output><input type="range" id="rate" min="5" max="25" step="1" value="10"></label>
     </div>
     <div class="receipt">
@@ -293,6 +293,7 @@ footer a{color:var(--ink-2)}
       <div class="row acc"><span>Residual fee · 1.0% of spend</span><b id="oUs">$500</b></div>
       <div class="row"><span>Trybe fee · 1.25% of spend</span><b id="oThem">$625</b></div>
       <div class="row tot"><span>Kept vs Trybe, per month</span><b id="oDiff">$125</b></div>
+      <div class="row" style="border:0;padding-top:12px"><span style="font-size:12.5px;color:var(--ink-3)">Residual's fee is capped at $5,000 a month per brand; past $500,000 of spend the saving vs Trybe grows faster.</span></div>
     </div>
   </div>
 </div></section>
@@ -300,16 +301,18 @@ footer a{color:var(--ink-2)}
 <section id="pricing"><div class="wrap">
   <div class="sechead">
     <div class="k">Rate card</div>
-    <div><h2>Free to start. Fees are never stacked.</h2><p>Trybe's published terms as of October 2026 alongside ours. Where we match them we say so.</p></div>
+    <div><h2>Free to start. Fees are never stacked.</h2><p>Trybe's published terms as of October 2026 alongside ours. Where we match them we say so. The headline fee is 20% under Trybe's and still clears about 78% gross margin after payout rails; the cap keeps 8-figure brands, and the compliance desk is where regulated advertisers pay for the thing nobody else offers.</p></div>
   </div>
   <div class="ratewrap"><table class="rate">
     <thead><tr><th></th><th>Residual</th><th>Trybe</th></tr></thead>
     <tbody>
       <tr><td>Start</td><td class="us">Free · no seats, contracts or minimums</td><td>Free · same</td></tr>
-      <tr><td>Fee on ad-spend pay rules</td><td class="us m">1.0% of ad spend</td><td class="m">1.25% of ad spend</td></tr>
+      <tr><td>Fee on ad-spend pay rules</td><td class="us"><span class="m">1.0% of ad spend</span>, capped at <span class="m">$5,000</span> per brand per month</td><td class="m">1.25% of ad spend, uncapped</td></tr>
       <tr><td>Fee on flat creator pay</td><td class="us m">1.5%</td><td class="m">1.5%</td></tr>
       <tr><td>Fee on kill fees</td><td class="us m">0%</td><td>Not a feature</td></tr>
       <tr><td>Creator fee</td><td class="us m">0%</td><td class="m">0%</td></tr>
+      <tr><td>Compliance desk (optional)</td><td class="us"><span class="m">$25</span> per video reviewed against your market's rule bank by a Residual reviewer, or <span class="m">$750/mo</span> per market unlimited</td><td>Not offered</td></tr>
+      <tr><td>Instant payout (optional, creators)</td><td class="us">Stripe's own instant-payout cost passed through, no markup. Weekly stays free.</td><td>Weekly only</td></tr>
       <tr><td>Agency workspace</td><td class="us"><span class="m">$199/mo</span> · unlimited client brands, margin on top, white-label creator comms</td><td>Retainers run through brand accounts</td></tr>
       <tr><td>Attribution</td><td class="us">Ad-platform spend by ad ID</td><td>Shopify GMV, server-side last click</td></tr>
       <tr><td>Ad channels</td><td class="us">Meta · TikTok · Google</td><td>Meta Partnership Ads</td></tr>
@@ -375,7 +378,7 @@ function setAud(a){
 }
 setAud(AUD);
 // receipt
-function calc(){const s=+$("spend").value,r=+$("rate").value;$("oSpend").value=money(s);$("oSpend2").textContent=money(s);$("oRate").value=r+"%";$("oRate2").textContent=r+"%";$("oCreators").textContent=money(s*r/100);$("oUs").textContent=money(s*0.01);$("oThem").textContent=money(s*0.0125);$("oDiff").textContent=money(s*0.0025);}
+function calc(){const s=+$("spend").value,r=+$("rate").value;$("oSpend").value=money(s);$("oSpend2").textContent=money(s);$("oRate").value=r+"%";$("oRate2").textContent=r+"%";$("oCreators").textContent=money(s*r/100);const us=Math.min(s*0.01,5000);$("oUs").textContent=money(us);$("oThem").textContent=money(s*0.0125);$("oDiff").textContent=money(s*0.0125-us);}
 $("spend").addEventListener("input",calc);$("rate").addEventListener("input",calc);calc();
 // statement ticker: one example line every few seconds, newest first, five rows max
 const lines=[["Meta","1202…5667","remesa_v2 · CO broad"],["TikTok","1812…8899","remesa_v2 · CO Spark"],["Meta","1202…5901","remesa_v2 · CO retargeting"],["Google","2210…0412","fees_mx · Demand Gen"]];
