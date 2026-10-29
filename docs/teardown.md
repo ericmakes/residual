@@ -45,7 +45,7 @@ The wedge is the one Trybe structurally cannot take without rebuilding: attribut
 Five promises that map one-to-one onto Trybe's gaps:
 
 1. **Open ledger.** Each approved video is tied to one or more ad IDs; daily spend by ad ID syncs from the Meta, TikTok and Google APIs into a ledger both sides see. Creator pay is a % of that number.
-2. **Approved means paid.** Approving a video starts a 14-day clock keyed on real spend: unless at least $50 has run on the video in 14 days, the kill fee (brand-set, floor $10, default $25) pays out automatically. Launch-then-pause does not stop the clock.
+2. **Approved means paid.** Approving a video starts a 21-day clock keyed on real spend: unless at least $50 has run on the video, the kill fee (brand-set, floor $10, default $15) pays out automatically. The brand may withdraw within 48 hours at no cost; after that, launch-then-pause does not stop the clock.
 3. **Pooled creators, not a cold start.** One shared, vetted creator marketplace. A brief goes live to matching creators in minutes; first submissions in days, not 2–4 weeks.
 4. **Compliance gate built in.** Per-market base checklist plus per-vertical items (consumer, fintech, gambling), snapshotted onto each submission. Approve stays locked until every item is ticked; Revise names every unticked item; every decision is logged with reviewer, date and the checklist state.
 5. **Multi-brief programs and agency workspaces.** One program, many briefs and pay rules; agencies manage several brands from one seat with their own margin on top.
@@ -56,12 +56,12 @@ Positioning line for the landing page: *Trybe for everyone who isn't a Shopify s
 
 Residual is one loop: a brief goes out to the pool, a video comes back, it passes a compliance gate, it runs as an ad, the spend it runs on is synced daily, and the creator is paid a share of that spend every week. Everything else is tooling around that loop.
 
-Core loop (drawn in the living doc): Brief goes live → Creator submits → Compliance gate? (fail: revise, naming the items) → Approved, 14-day clock starts → Run as ad (Meta · TikTok · Google; run to ≥ $50 within 14 days or the kill fee pays out) → Spend syncs daily by ad ID → Open ledger, both sides → Weekly payout, % of spend, via Stripe.
+Core loop (drawn in the living doc): Brief goes live → Creator submits → Compliance gate? (fail: revise, naming the items) → Approved, 21-day clock starts → Run as ad (Meta · TikTok · Google; run to ≥ $50 within 21 days or the kill fee pays out) → Spend syncs daily by ad ID → Open ledger, both sides → Weekly payout, % of spend, via Stripe.
 
 **Brand side**
 
 - Program with many briefs. A brief = product, vertical, angle list (3–10 hooks creators pick from), pay rule, markets, do/don't list.
-- Pay rules per brief: % of ad spend (default 10%), flat per approved video, or flat + %; optional lifetime cap per video; kill fee (floor $10 on % rules, default $25).
+- Pay rules per brief: % of ad spend (default 10%), flat per approved video, or flat + %; optional lifetime cap per video; kill fee (floor $10 on % rules, default $15).
 - Submissions inbox with approve, revise (names every unticked checklist item), reject (reason from a fixed list, shown to the creator).
 - Compliance checklist per market and vertical, snapshotted per submission. Reviewer ticks each; a video cannot be approved with an unticked item.
 - Launch: connect Meta, TikTok and Google ad accounts; attach one or more ad IDs to an approved video (a creative usually runs in several ad sets); one ledger line per ad ID per day.
@@ -91,27 +91,30 @@ Core loop (drawn in the living doc): Brief goes live → Creator submits → Com
 
 ## Pricing and unit economics
 
-Undercut Trybe on the ad-spend fee, match it on everything else, and add one paid tier Trybe does not have: agency workspaces. Free stays free so the comparison on a brand's spreadsheet is 1.0% vs 1.25%.
+Brands are the scarce side of this market (Trybe has thousands of creators per brand), so the terms lean toward brands wherever that does not break the creator's deal: brand fee 0.75% against Trybe's 1.25%, creators carry 2.5% of their own earnings, 48 hours to withdraw an approval, two free revisions, a 21-day clock and a buyout option. The one term that does not bend is the spend-keyed kill clock. Revenue per dollar of spend is unchanged (0.75% from the brand + 2.5% × ~10% from the creator ≈ 1.0%).
 
 | | Residual | Trybe |
 | --- | --- | --- |
 | Start | Free; no seats, contracts or minimums | Free; same |
-| Fee on ad-spend pay rules | **1.0% of ad spend**, capped at $5,000 per brand per month | 1.25% of ad spend, uncapped |
+| Brand fee on ad-spend pay rules | **0.75% of ad spend**, capped at $5,000 per brand per month | 1.25% of ad spend, uncapped |
+| Creator fee | 2.5% of earnings; nothing on kill fees (Collabstr 15%, JoinBrands 20%) | 0% |
+| Kill fee clock | 21 days to $50 of spend; 48h withdrawal at no cost; default $15, floor $10 | Not a feature |
+| Revisions | Two per video at no charge | Set per campaign |
+| Buyout of a winning video | 3× the creator's trailing 30-day share, then unlimited use | Licence ends when commissions stop |
 | Fee on flat creator pay | 1.5% of creator earnings | 1.5% |
 | Fee on sales-based pay rules | 1.5% of attributed sales (optional add-on) | 1.5% |
 | Kill fees | 0% fee; passed through to the creator in full | Not a feature |
 | Compliance desk (optional) | $25 per video reviewed by a Residual reviewer against the market rule bank, or $750/mo per market unlimited | Not offered |
 | Instant payout (optional, creators) | Stripe's instant-payout cost passed through at no markup; weekly stays free | Weekly only |
 | Agency workspace | $199/mo per agency: unlimited brands, agency margin on top, white-label creator comms | Retainers run through brand accounts |
-| Creator fee | 0% | 0% |
 
-Worked example at Trybe's median rule (10% of ad spend) on a brand spending $50,000/mo through creator videos: creators earn $5,000, Residual earns $500, Trybe would earn $625. At $500,000/mo the gap is $1,250/mo; past that the cap holds Residual at $5,000 while Trybe keeps climbing, which is the number the sales deck leads with for 8-figure brands.
+Worked example at Trybe's median rule (10% of ad spend) on a brand spending $50,000/mo through creator videos: creators earn $5,000 and keep $4,875, the brand pays Residual $375 where Trybe would charge $625. At $500,000/mo the gap is $2,500/mo; past that the cap holds Residual at $5,000 while Trybe keeps climbing, which is the number the sales deck leads with for 8-figure brands.
 
 Unit economics per $1,000,000/mo of ad spend through the ledger at the 10% median rule:
 
 | Line | Per $1M/mo of spend |
 | --- | --- |
-| Revenue (1.0%) | $10,000 |
+| Revenue ($7,500 brand fee at 0.75% + $2,500 creator fee at 2.5% of $100,000) | $10,000 |
 | Stripe Connect payouts on the $100,000 creator share (0.25% + $0.25 × ~800 weekly payouts) | −$450 |
 | Cross-border payouts for LATAM creators, absorbed | −$600 |
 | FX passed at Stripe's rate, absorbed | −$600 |
@@ -120,7 +123,7 @@ Unit economics per $1,000,000/mo of ad spend through the ledger at the 10% media
 | Fraud and chargeback reserve | −$100 |
 | Gross margin | about $7,850 (78%) |
 
-Fixed cost for a two-person team with tooling is about $32,000/mo, so break-even sits near $4M/mo of spend through the platform, roughly 80 brands at the $50K example. The 20% headline discount to Trybe costs $2,500 per $1M of spend; it is recovered by the compliance desk (about $6 of reviewer cost per $25 review, 75% margin) and the agency tier, neither of which Trybe sells.
+Fixed cost for a two-person team with tooling is about $32,000/mo, so break-even sits near $4M/mo of spend through the platform, roughly 80 brands at the $50K example. The 40% brand-side discount to Trybe is paid for by the creator fee, not by margin; upside beyond that comes from the compliance desk (about $6 of reviewer cost per $25 review, 75% margin) and the agency tier, neither of which Trybe sells.
 
 ## Go-to-market
 
