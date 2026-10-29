@@ -23,7 +23,7 @@ Pricing: free to start; 1.0% of ad spend on % rules (Trybe: 1.25%); 1.5% on flat
 | `prototype/index.html`, `landing/index.html` | Standalone builds of the two pages (open in a browser) |
 | `scripts/build.sh` | Wraps `src/` into the standalone builds |
 | `scripts/gauntlet.sh` | **Certify before ship**: build, then run every saved harness battery. Exit 0 = CERTIFIED |
-| `audits/2026-10-29/harness-residual.js` | Playwright harness: 15 batteries, public inputs only |
+| `audits/2026-10-29/harness-residual.js` | Playwright harness: 17 batteries, public inputs only |
 | `audits/2026-10-29/residual-review-v1.md` | Audit report: harness findings, persona panel, fixes landed, opportunities |
 | `docs/teardown.md` | Trybe teardown and product spec (export of the working doc) |
 
