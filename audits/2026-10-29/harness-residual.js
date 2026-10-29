@@ -42,9 +42,11 @@ const section = (n) => console.log('— ' + n);
   st = await S();
   const seedSpend = st.ledger.filter(l => l.kind === 'spend');
   ok(seedSpend.length >= 10, 'seed ledger thin: ' + seedSpend.length);
-  ok(seedSpend.every(l => Math.abs(l.fee - l.amount * 0.01) < 1e-6), 'seed fee ≠ 1% somewhere');
+  // 2026-10-29 amended (brand-favourable terms): brand fee 0.75% of spend, creator fee 2.5% of gross share
+  ok(seedSpend.every(l => Math.abs(l.fee - l.amount * 0.0075) < 1e-6), 'seed brand fee ≠ 0.75% somewhere');
+  ok(seedSpend.every(l => Math.abs(l.cfee - (l.creatorShare + l.cfee) * 0.025) < 1e-6), 'seed creator fee ≠ 2.5% of gross somewhere');
   // every running seeded sub with a flat component should have flatPaid recorded
-  for (const s of st.subs) { const b = st.briefs.find(x => x.id === s.briefId); if (s.status === 'running' && b.rule.flat) ok(s.flatPaid === b.rule.flat, `seed: ${s.id} running on flat+pct rule but flatPaid=${s.flatPaid}`); }
+  for (const s of st.subs) { const b = st.briefs.find(x => x.id === s.briefId); if (s.status === 'running' && b.rule.flat) ok(Math.abs(s.flatPaid - b.rule.flat * 0.975) < 1e-6, `seed: ${s.id} running on flat+pct rule but flatPaid=${s.flatPaid}`); }
 
   // ---------- Phase 2: systems ----------
   section('P2 gate law');
@@ -75,16 +77,17 @@ const section = (n) => console.log('— ' + n);
   ok(s3.status === 'approved' && s3.approvedDay === 0, 'approve: ' + s3.status + ' day ' + s3.approvedDay);
 
   section('P2 kill-fee law');
-  // s2 approved day -3 → kills when day reaches 11; s3 approved day 0 → kills at day 14; s6 flat rule kill 0 → never kills
-  await advance(10);
-  st = await S(); ok(st.subs.find(s => s.id === 's2').status === 'approved', 's2 killed early at day 10');
+  // 2026-10-29 amended (brand-favourable terms): clock is 21 days, default kill fee $15.
+  // s2 approved day -3 → kills when day reaches 18; s3 approved day 0 → kills at day 21; s6 flat rule kill 0 → never kills
+  await advance(17);
+  st = await S(); ok(st.subs.find(s => s.id === 's2').status === 'approved', 's2 killed early at day 17');
   await advance(1);
   st = await S(); let s2 = st.subs.find(s => s.id === 's2');
-  ok(s2.status === 'killed' && s2.killPaid === 25, 's2 at day 11: ' + s2.status + ' killPaid=' + s2.killPaid);
-  ok(st.ledger.some(l => l.kind === 'kill' && l.subId === 's2' && l.creatorShare === 25), 'no kill ledger line for s2');
+  ok(s2.status === 'killed' && s2.killPaid === 15, 's2 at day 18: ' + s2.status + ' killPaid=' + s2.killPaid);
+  ok(st.ledger.some(l => l.kind === 'kill' && l.subId === 's2' && l.creatorShare === 15), 'no kill ledger line for s2');
   await advance(3);
   st = await S(); s3 = st.subs.find(s => s.id === 's3');
-  ok(s3.status === 'killed', 's3 at day 14: ' + s3.status);
+  ok(s3.status === 'killed', 's3 at day 21: ' + s3.status);
   ok(st.subs.find(s => s.id === 's6').status === 'approved', 's6 (kill=0 flat) was killed');
   // creator sees the kill fee as earned
   await role('Creator'); await nav('Earnings');
@@ -93,7 +96,7 @@ const section = (n) => console.log('— ' + n);
   section('P2 payout law');
   st = await S();
   const payouts = st.ledger.filter(l => l.kind === 'payout').sort((a, b) => a.day - b.day);
-  ok(payouts.length >= 3, 'expected ≥3 payouts by day 14, got ' + payouts.length + ' at days ' + payouts.map(p => p.day));
+  ok(payouts.length >= 3, 'expected ≥3 payouts by day 21, got ' + payouts.length + ' at days ' + payouts.map(p => p.day));
   const gaps = payouts.slice(1).map((p, i) => p.day - payouts[i].day);
   ok(gaps.every(g => g === 7), 'payout cadence not weekly: ' + gaps);
   const owed = st.subs.reduce((a, s) => a + (s.spend.reduce((x, y) => x + y.share, 0) + (s.killPaid || 0) + (s.flatPaid || 0)) - s.paid, 0);
@@ -110,9 +113,10 @@ const section = (n) => console.log('— ' + n);
   st = await S();
   const s1 = st.subs.find(s => s.id === 's1');
   const share1 = s1.spend.reduce((a, x) => a + x.share, 0);
-  ok(share1 <= 400 + 1e-6, 's1 share exceeded $400 cap: ' + share1);
+  const gross1 = s1.spend.reduce((a, x) => a + x.gross, 0);
+  ok(gross1 <= 400 + 1e-6 && Math.abs(share1 - gross1 * 0.975) < 1e-6, 's1 cap/net wrong: gross ' + gross1 + ' net ' + share1);
   ok(share1 > 300, 's1 share suspiciously low after 70 days: ' + share1);
-  ok(st.ledger.filter(l => l.kind === 'spend').every(l => Math.abs(l.fee - l.amount * 0.01) < 1e-6), 'fee ≠ 1% of spend somewhere');
+  ok(st.ledger.filter(l => l.kind === 'spend').every(l => Math.abs(l.fee - l.amount * 0.0075) < 1e-6), 'brand fee ≠ 0.75% of spend somewhere');
   ok(st.subs.filter(s => s.status === 'running').every(s => s.spend.length >= 60), 'running video missing daily spend lines');
   ok(errs.length === 0, 'page errors during soak: ' + errs.join(' | '));
 
@@ -149,16 +153,28 @@ const section = (n) => console.log('— ' + n);
   await fresh(); await role('Brand'); await nav('Launch');
   await page.locator('tr:has-text("vale_notificacion") button:has-text("Meta")').click(); await page.waitForTimeout(60);
   await page.locator('tr:has-text("vale_notificacion") button:has-text("Pause")').click(); await page.waitForTimeout(60);
-  await advance(11);
+  await advance(18);
   st = await S(); s2 = st.subs.find(s => s.id === 's2');
-  ok(s2.status === 'killed' && s2.killPaid === 25, 'LOOPHOLE: launched+paused with $0 spend escaped the kill clock: ' + s2.status);
+  ok(s2.status === 'killed' && s2.killPaid === 15, 'LOOPHOLE: launched+paused with $0 spend escaped the kill clock: ' + s2.status);
   ok((s2.audit || []).some(a => a.action === 'kill fee triggered'), 'kill not in audit log');
   // a video that genuinely ran past the minimum spend must NOT be killed when paused later
   await fresh(); await role('Brand'); await nav('Launch');
   await page.locator('tr:has-text("vale_notificacion") button:has-text("Meta")').click(); await advance(2);
-  await nav('Launch'); await page.locator('tr:has-text("vale_notificacion") button:has-text("Pause")').click(); await advance(12);
+  await nav('Launch'); await page.locator('tr:has-text("vale_notificacion") button:has-text("Pause")').click(); await advance(19);
   st = await S(); s2 = st.subs.find(s => s.id === 's2');
   ok(s2.status === 'paused' && s2.spend.reduce((a, x) => a + x.amt, 0) >= 50, 'ran-then-paused video wrongly killed: ' + s2.status);
+
+  section('P2 approval withdrawal window (brand-favourable, added 2026-10-29)');
+  await fresh(); await role('Brand'); await nav('Submissions');
+  for (let i = 0; i < 4; i++) await page.click(`#ck-s3-${i}`);
+  await page.locator('.panel:has-text("sofia_fees_mx") button:has-text("Approve")').click(); await page.waitForTimeout(60);
+  await advance(1); await nav('Launch');
+  ok(await page.locator('tr:has-text("sofia_fees_mx") button:has-text("Withdraw")').count() === 1, 'no Withdraw button inside the 48h window');
+  await page.locator('tr:has-text("sofia_fees_mx") button:has-text("Withdraw")').click(); await page.waitForTimeout(60);
+  st = await S(); s3 = st.subs.find(s => s.id === 's3');
+  ok(s3.status === 'review' && s3.approvedDay === null && (s3.audit || []).some(a => a.action === 'approval withdrawn'), 'withdraw failed: ' + s3.status);
+  await advance(25); st = await S(); ok(st.subs.find(s => s.id === 's3').status === 'review' && !st.ledger.some(l => l.kind === 'kill' && l.subId === 's3'), 'withdrawn approval still produced a kill fee');
+  await nav('Launch'); ok(await page.locator('tr:has-text("vale_notificacion") button:has-text("Withdraw")').count() === 0, 'Withdraw offered past the 48h window');
 
   section('P2 flat rule on approval');
   await fresh();
@@ -177,8 +193,8 @@ const section = (n) => console.log('— ' + n);
   for (let i = 0; i < 4; i++) await page.click(`#ck-${ns.id}-${i}`);
   await page.locator(`.panel:has-text("flat_test.mp4") button:has-text("Approve")`).click(); await page.waitForTimeout(60);
   st = await S(); const ns2 = st.subs.find(s => s.id === ns.id);
-  ok(ns2.status === 'approved' && ns2.flatPaid === 75, 'flat approval: ' + ns2.status + ' flatPaid=' + ns2.flatPaid);
-  ok(st.ledger.some(l => l.kind === 'flat' && l.subId === ns.id && Math.abs(l.fee - 1.125) < 1e-6), 'flat fee line missing or ≠1.5%');
+  ok(ns2.status === 'approved' && Math.abs(ns2.flatPaid - 73.125) < 1e-6, 'flat approval (net of 2.5%): ' + ns2.status + ' flatPaid=' + ns2.flatPaid);
+  ok(st.ledger.some(l => l.kind === 'flat' && l.subId === ns.id && Math.abs(l.fee - 1.125) < 1e-6 && Math.abs(l.cfee - 1.875) < 1e-6), 'flat fee line missing or fees wrong');
   // ADVERSARIAL: pct brief with kill=0 → approved video never pays, never kills
   await advance(20);
   st = await S(); ok(st.subs.find(s => s.id === ns.id).status === 'approved', 'flat approved video changed status: ' + st.subs.find(s => s.id === ns.id).status);
@@ -240,10 +256,14 @@ const section = (n) => console.log('— ' + n);
   await lp.goto('file://' + LANDING); await lp.waitForTimeout(200);
   await lp.evaluate(() => { const s = document.getElementById('spend'); s.value = 200000; s.dispatchEvent(new Event('input')); const r = document.getElementById('rate'); r.value = 12; r.dispatchEvent(new Event('input')); });
   const o = await lp.evaluate(() => ({ c: document.getElementById('oCreators').textContent, u: document.getElementById('oUs').textContent, t: document.getElementById('oThem').textContent, d: document.getElementById('oDiff').textContent }));
-  ok(o.c === '$24,000' && o.u === '$2,000' && o.t === '$2,500' && o.d === '$500', 'calculator: ' + JSON.stringify(o));
-  await lp.waitForTimeout(9000);
-  const rows = await lp.evaluate(() => document.querySelectorAll('#lrows tr').length);
-  ok(rows <= 5 && rows >= 4, 'ticker rows: ' + rows);
+  // 2026-10-29 amended: brand fee 0.75% (capped $5,000); creators keep 97.5%
+  ok(o.c === '$24,000' && o.u === '$1,500' && o.t === '$2,500' && o.d === '$1,000', 'calculator: ' + JSON.stringify(o));
+  ok((await lp.textContent('#oNet')) === '$23,400', 'creator net wrong: ' + (await lp.textContent('#oNet')));
+  // 2026-10-29 amended (landing v3): the animated ticker was removed as an AI tell; the page now shows real prototype screenshots
+  const imgs = await lp.evaluate(() => [...document.querySelectorAll('figure.shot img')].map(i => ({ w: i.naturalWidth, alt: (i.alt || '').length })));
+  ok(imgs.length === 3 && imgs.every(i => i.w > 1000 && i.alt > 40), 'screenshots missing or without alt: ' + JSON.stringify(imgs));
+  const tells = await lp.evaluate(() => ({ kickers: document.querySelectorAll('.kicker,.k,.eyebrow').length, numbered: /(^|\s)0[1-6](\s|$)/m.test(document.body.innerText) ? 1 : 0, live: /live example|● live/i.test(document.body.innerText) ? 1 : 0 }));
+  ok(tells.kickers === 0 && tells.numbered === 0 && tells.live === 0, 'AI tells present: ' + JSON.stringify(tells));
   await lp.fill('#wlEmail', 'e@x.com'); await lp.click('#wl button'); await lp.waitForTimeout(60);
   ok((await lp.textContent('#wlMsg')).includes('e@x.com'), 'waitlist confirmation missing');
   const lsw = await lp.evaluate(() => document.documentElement.scrollWidth); ok(lsw <= 1280, 'landing desktop overflow');
