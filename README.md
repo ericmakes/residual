@@ -12,7 +12,7 @@ Five promises, each mapped to a Trybe gap:
 4. **Compliance gate.** Per-market base checklist + per-vertical items, snapshotted on each submission; Approve stays locked until every item is ticked; Revise names every unticked item; every decision is logged with reviewer, time and the checklist state.
 5. **Many briefs, agency workspaces.** One program, many pay rules.
 
-Pricing: free to start; 1.0% of ad spend on % rules (Trybe: 1.25%); 1.5% on flat creator pay; 0% on kill fees; agency workspace $199/mo.
+Pricing: free to start; 1.0% of ad spend on % rules, capped at $5,000/brand/mo (Trybe: 1.25%, uncapped); 1.5% on flat creator pay; 0% on kill fees; compliance desk $25/video or $750/mo per market; agency workspace $199/mo. Unit economics in `docs/teardown.md`: ~78% gross margin, break-even near $4M/mo of spend.
 
 ## What is here
 
