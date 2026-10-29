@@ -1,227 +1,391 @@
 <title>Residual</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
-/* Layout: a long single column with full-width bands; one live ledger ticker in the hero does the selling. */
+/* Identity: a bank statement. White paper, black ink, hairline rules, tabular mono for every number, one cobalt accent reserved for money that moved. Layout: a 12-col grid, everything left-aligned, sections separated by rules not bands. Audience switch (brand / creator) rewrites the copy in place. */
 :root{
-  --bg:#f6f7f5; --panel:#ffffff; --ink:#15201d; --muted:#5d6b66; --line:#dde3df;
-  --accent:#0d7a5f; --accent-ink:#ffffff; --accent-soft:#e3f2ec; --dark:#15201d; --dark-ink:#f6f7f5; --dark-muted:#9db0a8;
-  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
-  --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --paper:#ffffff; --paper-2:#f4f4f2; --ink:#101113; --ink-2:#4a4d53; --ink-3:#8b8f97; --rule:#d9dad6; --rule-2:#ececea;
+  --acc:#1f3fff; --acc-ink:#ffffff; --acc-tint:#eef1ff; --neg:#b42318;
+  --display:"Archivo",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --body:"Archivo",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f1513;--panel:#161d1a;--ink:#e8ece9;--muted:#9aa7a1;--line:#27312d;--accent:#3fbf96;--accent-ink:#06211a;--accent-soft:#163a30;--dark:#060a09;--dark-ink:#e8ece9;--dark-muted:#8a9a93;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0f1513;--panel:#161d1a;--ink:#e8ece9;--muted:#9aa7a1;--line:#27312d;--accent:#3fbf96;--accent-ink:#06211a;--accent-soft:#163a30;--dark:#060a09;--dark-ink:#e8ece9;--dark-muted:#8a9a93;color-scheme:dark}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#0c0d10;--paper-2:#15171b;--ink:#f1f1ee;--ink-2:#b4b7bd;--ink-3:#7c8089;--rule:#2a2d33;--rule-2:#1d1f24;--acc:#6f86ff;--acc-ink:#0a0f2a;--acc-tint:#161b33;--neg:#ff7b6e;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#0c0d10;--paper-2:#15171b;--ink:#f1f1ee;--ink-2:#b4b7bd;--ink-3:#7c8089;--rule:#2a2d33;--rule-2:#1d1f24;--acc:#6f86ff;--acc-ink:#0a0f2a;--acc-tint:#161b33;--neg:#ff7b6e;color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
-.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-header{padding-block:18px;display:flex;justify-content:space-between;align-items:center;gap:16px}
-.logo{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
-.logo i{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:4px 0 0 0 var(--bg),8px 0 0 0 var(--accent)}
-.hnav{display:flex;gap:18px;align-items:center;font-size:14px}
-.hnav a{color:var(--muted);text-decoration:none}
-.btn{display:inline-block;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 16px;border-radius:8px;font:600 14px var(--body);text-decoration:none;cursor:pointer}
-.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.btn.ghost{background:transparent;color:var(--dark-ink);border-color:var(--dark-muted)}
-.hero{padding-block:48px 56px;display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center}
-.eyebrow{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(38px,6vw,64px);line-height:1.02;letter-spacing:-.03em;margin:10px 0 18px;text-wrap:balance}
-h1 em{font-style:normal;color:var(--accent)}
-.lede{font-size:18px;color:var(--muted);max-width:52ch;margin:0 0 24px}
-.ctas{display:flex;gap:10px;flex-wrap:wrap}
-.fine{font-size:13px;color:var(--muted);margin-top:12px}
-/* ledger ticker */
-.ledger{background:var(--dark);color:var(--dark-ink);border-radius:14px;padding:18px 18px 14px;font-family:var(--mono);font-size:13px;min-width:0;box-shadow:0 20px 50px -30px rgba(0,0,0,.5)}
-.ledger .hd{display:flex;justify-content:space-between;color:var(--dark-muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
-.ledger .big{font-size:34px;font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:0 0 4px}
-.ledger .lbl{color:var(--dark-muted);font-size:12px;font-family:var(--body);margin-bottom:14px}
-.ledger table{width:100%;border-collapse:collapse}
-.ledger td{padding:6px 0;border-top:1px solid rgba(255,255,255,.08);font-variant-numeric:tabular-nums;white-space:nowrap}
-.ledger td:last-child,.ledger td:nth-child(3){text-align:right}
-.ledger td.new{color:var(--accent)}
-.ledger .plat{color:var(--dark-muted)}
-@keyframes rowin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-.ledger tr.in td{animation:rowin .4s ease}
-@media (prefers-reduced-motion: reduce){.ledger tr.in td{animation:none}}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;font-variation-settings:"wdth" 100}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.hide{display:none!important}
+/* top bar */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px;border-bottom:1px solid var(--rule)}
+.wordmark{font-family:var(--mono);font-weight:600;font-size:15px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none}
+.wordmark b{color:var(--acc)}
+.seg{display:inline-flex;border:1px solid var(--ink);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--ink);font:500 13px var(--body);padding:6px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.barlinks{display:flex;gap:22px;font-size:14px}
+.barlinks a{text-decoration:none;color:var(--ink-2)}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);padding:12px 18px;font:600 15px var(--body);text-decoration:none;cursor:pointer;border-radius:4px}
+.btn.alt{background:transparent;color:var(--ink)}
+.btn.acc{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:48px;padding-block:56px 64px;align-items:start}
+.kicker{font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin:0 0 20px}
+h1{font-family:var(--display);font-variation-settings:"wdth" 112;font-weight:800;font-size:clamp(40px,6.4vw,78px);line-height:.98;letter-spacing:-.035em;margin:0 0 22px;text-wrap:balance}
+h1 .acc{color:var(--acc)}
+.lede{font-size:19px;line-height:1.5;color:var(--ink-2);max-width:54ch;margin:0 0 28px}
+.ctas{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ctas .note{font-size:13px;color:var(--ink-3);margin-left:6px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:44px;border-top:1px solid var(--rule)}
+.facts div{padding:14px 16px 0 0;border-right:1px solid var(--rule-2);margin-right:16px}
+.facts div:last-child{border-right:0}
+.facts b{display:block;font-family:var(--mono);font-weight:600;font-size:22px;letter-spacing:-.02em}
+.facts span{font-size:13px;color:var(--ink-2)}
+/* the statement */
+.stmt{border:1px solid var(--ink);background:var(--paper);font-family:var(--mono);font-size:12.5px;min-width:0;position:relative}
+.stmt::before{content:"";position:absolute;inset:6px -7px -7px 6px;border:1px solid var(--rule);z-index:-1}
+.stmt .hd{display:flex;justify-content:space-between;gap:12px;padding:14px 16px 12px;border-bottom:1px solid var(--ink)}
+.stmt .hd b{font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px}
+.stmt .hd span{color:var(--ink-3);font-size:11px;text-align:right}
+.stmt .sum{display:grid;grid-template-columns:1fr auto;gap:4px 16px;padding:14px 16px;border-bottom:1px solid var(--rule)}
+.stmt .sum .big{font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1}
+.stmt .sum .lbl{font-family:var(--body);color:var(--ink-2);font-size:12.5px}
+.stmt .sum .r{text-align:right;color:var(--ink-2);font-size:11.5px;align-self:end;line-height:1.5}
+.stmt table{width:100%;border-collapse:collapse}
+.stmt th{font-weight:500;color:var(--ink-3);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;text-align:left;padding:10px 16px 6px;border-bottom:1px solid var(--rule)}
+.stmt th.num,.stmt td.num{text-align:right}
+.stmt td{padding:8px 16px;border-bottom:1px solid var(--rule-2);white-space:nowrap;vertical-align:top}
+.stmt td .sub{display:block;color:var(--ink-3);font-size:10.5px}
+.stmt td.plus{color:var(--acc);font-weight:600}
+.stmt tr.in td{animation:rowin .45s ease}
+@keyframes rowin{from{background:var(--acc-tint)}to{background:transparent}}
+.stmt .ft{padding:10px 16px;color:var(--ink-3);font-size:10.5px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.stmt .ft i{font-style:normal;color:var(--acc)}
 /* sections */
-section{padding-block:56px}
-h2{font-family:var(--display);font-weight:800;font-size:clamp(28px,4vw,40px);letter-spacing:-.02em;line-height:1.1;margin:0 0 12px;text-wrap:balance;max-width:24ch}
-.sect-lede{color:var(--muted);max-width:60ch;margin:0 0 28px;font-size:17px}
-.band{background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.dark{background:var(--dark);color:var(--dark-ink)}
-.dark h2{color:var(--dark-ink)} .dark .sect-lede{color:var(--dark-muted)}
-.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
-.prom{display:grid;gap:8px;min-width:0}
-.prom .k{font:500 13px var(--mono);color:var(--accent)}
-.prom h3{font-family:var(--display);font-weight:800;font-size:22px;margin:0;letter-spacing:-.01em}
-.prom p{margin:0;color:var(--muted)}
-.dark .prom p{color:var(--dark-muted)}
-/* how it works: a horizontal flow */
-.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;counter-reset:step}
-.step{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--panel);min-width:0;position:relative}
-.step b{display:block;font:600 15px var(--body);margin:6px 0 4px}
-.step span{font-size:14px;color:var(--muted)}
-.step::before{counter-increment:step;content:counter(step);font:500 12px var(--mono);color:var(--accent);background:var(--accent-soft);border-radius:12px;padding:1px 8px}
-/* compare */
-.cmp{overflow-x:auto;border-radius:12px;border:1px solid var(--line)}
-.cmp table{width:100%;border-collapse:collapse;background:var(--panel);min-width:620px}
-.cmp th,.cmp td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:15px}
-.cmp th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
-.cmp tr:last-child td{border-bottom:0}
-.cmp td.us{background:var(--accent-soft);font-weight:600}
-.cmp .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
-/* calc */
-.calc{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
-.calc label{display:grid;gap:6px;font-size:13px;color:var(--muted);font-weight:600;margin-bottom:14px}
-.calc input[type=range]{width:100%;accent-color:var(--accent)}
-.calc output{font:500 20px var(--mono);color:var(--ink)}
-.out{display:grid;gap:10px}
-.out div{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:8px;gap:12px}
-.out div b{font:500 22px var(--mono);font-variant-numeric:tabular-nums}
-.out .acc b{color:var(--accent)}
-/* pricing */
-.price{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
-.tier{border:1px solid var(--line);border-radius:12px;padding:20px;background:var(--panel);display:grid;gap:10px;align-content:start}
-.tier.hi{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.tier h3{margin:0;font-family:var(--display);font-weight:800;font-size:20px}
-.tier .amt{font:500 32px var(--mono);letter-spacing:-.02em}
-.tier .amt small{font:400 14px var(--body);color:var(--muted)}
-.tier ul{margin:0;padding-left:18px;color:var(--muted);font-size:15px;display:grid;gap:4px}
-footer{padding-block:28px 48px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.cta-final{text-align:center;padding-block:72px}
-.cta-final h2{margin-inline:auto}
-@media (max-width:800px){.hero{grid-template-columns:1fr;padding-block:28px 40px}.calc{grid-template-columns:1fr}.hnav a:not(.btn){display:none}}
+section{padding-block:64px;border-top:1px solid var(--rule)}
+.sechead{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:32px;margin-bottom:36px}
+.sechead .k{font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);padding-top:6px}
+h2{font-family:var(--display);font-variation-settings:"wdth" 108;font-weight:800;font-size:clamp(28px,3.6vw,44px);line-height:1.04;letter-spacing:-.03em;margin:0 0 10px;text-wrap:balance;max-width:26ch}
+.sechead p{margin:0;color:var(--ink-2);font-size:17px;max-width:58ch}
+/* compare statements */
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+.two .lab{font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+.stmt.them{border-color:var(--rule);color:var(--ink-2)}
+.stmt.them::before{display:none}
+.stmt.them .hd{border-bottom-color:var(--rule)}
+.stmt.them .blank{padding:34px 16px;color:var(--ink-3);text-align:center;font-family:var(--body);font-size:14px}
+.verdict{margin-top:28px;display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:32px}
+.verdict p{margin:0;font-size:17px;color:var(--ink-2);max-width:60ch}
+/* timeline */
+.tl{position:relative;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px;padding-top:28px}
+.tl::before{content:"";position:absolute;left:0;right:0;top:8px;border-top:1px solid var(--ink)}
+.tl div{position:relative;min-width:0}
+.tl div::before{content:"";position:absolute;top:-24px;left:0;width:9px;height:9px;border-radius:50%;background:var(--paper);border:1.5px solid var(--ink)}
+.tl div.hot::before{background:var(--acc);border-color:var(--acc)}
+.tl .d{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:6px}
+.tl b{display:block;font-weight:700;font-size:15px;letter-spacing:-.01em;margin-bottom:4px}
+.tl span{font-size:13.5px;color:var(--ink-2)}
+/* promises */
+.prom{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 48px}
+.prom>div{display:grid;grid-template-columns:28px minmax(0,1fr);gap:14px;padding:18px 0;border-top:1px solid var(--rule-2)}
+.prom>div>div{min-width:0}
+.prom>div:nth-child(1),.prom>div:nth-child(2){border-top:0}
+.prom .t{font-family:var(--mono);font-size:12px;color:var(--acc);padding-top:3px}
+.prom b{display:block;font-weight:700;font-size:17px;letter-spacing:-.01em;margin-bottom:4px}
+.prom p{margin:0;color:var(--ink-2);font-size:15px}
+/* receipt */
+.rec{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:40px;align-items:start}
+.rec label{display:block;font-size:13px;color:var(--ink-2);font-weight:500;margin-bottom:18px}
+.rec label output{display:block;font:600 26px var(--mono);color:var(--ink);letter-spacing:-.02em;margin:4px 0 8px}
+.rec input[type=range]{width:100%;accent-color:var(--acc)}
+.receipt{border:1px solid var(--ink);padding:20px 22px;font-family:var(--mono);font-size:14px;max-width:520px}
+.receipt .row{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px dashed var(--rule)}
+.receipt .row:last-child{border-bottom:0}
+.receipt .row span:first-child{color:var(--ink-2);font-family:var(--body);font-size:14px}
+.receipt .row b{font-weight:600;font-variant-numeric:tabular-nums}
+.receipt .row.acc b{color:var(--acc)}
+.receipt .row.tot{border-top:1px solid var(--ink);margin-top:6px;padding-top:12px}
+.receipt .row.tot b{font-size:18px}
+/* rate card */
+.rate{width:100%;border-collapse:collapse;font-size:15px}
+.rate th{text-align:left;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:0 0 10px;border-bottom:1px solid var(--ink)}
+.rate td{padding:14px 0;border-bottom:1px solid var(--rule-2);vertical-align:top}
+.rate td:first-child{color:var(--ink-2);width:34%}
+.rate td.us{font-weight:600}
+.rate tr:last-child td{border-bottom:0}
+.rate .m{font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* evidence */
+.ev{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px}
+.ev div{border-top:1px solid var(--ink);padding-top:14px}
+.ev b{display:block;font:600 34px var(--mono);letter-spacing:-.03em;line-height:1;margin-bottom:10px}
+.ev p{margin:0 0 8px;font-size:15px;color:var(--ink-2)}
+.ev a{font-size:12.5px;color:var(--ink-3)}
+/* waitlist */
+.wl{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:40px;align-items:start}
+form#wl{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;max-width:640px}
+form#wl input,form#wl select{font:400 15px var(--body);color:var(--ink);background:var(--paper);border:1px solid var(--ink);padding:12px 14px;border-radius:4px;min-width:0}
+form#wl input:focus,form#wl select:focus,.seg button:focus-visible,.btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.fine{font-size:13px;color:var(--ink-3);margin:12px 0 0}
+footer{padding-block:28px 56px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3);display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:32px}
+footer ul{margin:0;padding:0;list-style:none;display:grid;gap:4px}
+footer a{color:var(--ink-2)}
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr;gap:36px;padding-block:36px 48px}
+  .sechead,.verdict,.rec,.wl,footer{grid-template-columns:1fr;gap:18px}
+  .two{grid-template-columns:1fr}
+  .tl{grid-template-columns:1fr 1fr;gap:28px 16px}
+  .tl::before{display:none}
+  .tl div::before{display:none}
+  .prom{grid-template-columns:1fr}
+  .prom>div:nth-child(2){border-top:1px solid var(--rule-2)}
+  .ev{grid-template-columns:1fr;gap:20px}
+  .facts{grid-template-columns:1fr;border-top:0}
+  .facts div{border-right:0;border-top:1px solid var(--rule);margin:0;padding:12px 0}
+  .barlinks{display:none}
+  form#wl{grid-template-columns:1fr}
+  .stmt td{white-space:normal}
+  .stmt::before{display:none}
+  .ratewrap{overflow-x:auto}
+  .rate{min-width:560px}
+}
+@media (prefers-reduced-motion: reduce){.stmt tr.in td{animation:none}html{scroll-behavior:auto}}
 </style>
 
 <div class="wrap">
-<header>
-  <div class="logo"><i></i>Residual</div>
-  <nav class="hnav"><a href="#how">How it works</a><a href="#compare">vs Trybe</a><a href="#pricing">Pricing</a><a class="btn pri" href="#waitlist">Join the waitlist</a></nav>
-</header>
+<div class="bar">
+  <a class="wordmark" href="#top">Resid<b>u</b>al</a>
+  <div class="seg" role="group" aria-label="Who are you">
+    <button id="segBrand" aria-pressed="true" onclick="setAud('brand')">I buy media</button>
+    <button id="segCreator" aria-pressed="false" onclick="setAud('creator')">I make videos</button>
+  </div>
+  <nav class="barlinks"><a href="#how">How it works</a><a href="#compare">vs Trybe</a><a href="#pricing">Rate card</a><a class="btn" style="padding:9px 14px;font-size:14px" href="#waitlist">Request access</a></nav>
+</div>
 
-<div class="hero">
+<div class="hero" id="top">
   <div>
-    <div class="eyebrow">Performance UGC for performance marketers</div>
-    <h1>Your video runs. <em>You get paid.</em> Every day it runs.</h1>
-    <p class="lede">Residual pays creators a share of the ad spend their videos run on, across Meta, TikTok and Google, with the spend ledger open to both sides. Brands get a vetted creator pool and a compliance gate. No Shopify required.</p>
-    <div class="ctas"><a class="btn pri" href="#waitlist">Start a brand program</a><a class="btn" href="#waitlist">Join as a creator</a></div>
-    <p class="fine">Free to start. 1.0% of ad spend on performance rules, 1.5% on flat pay, nothing on kill fees. Payouts weekly via Stripe in 170+ countries.</p>
+    <p class="kicker" data-b="Performance UGC · for media buyers" data-c="Performance UGC · for creators">Performance UGC · for media buyers</p>
+    <h1 id="h1b">Pay creators on the spend <span class="acc">you actually run.</span></h1>
+    <h1 id="h1c" class="hide">Your video runs, <span class="acc">you get paid.</span> Every day it runs.</h1>
+    <p class="lede" data-b="Residual ties each approved video to the ad IDs it runs under on Meta, TikTok and Google, pulls the spend daily from the platform APIs, and pays creators their share of that number. No Shopify, no pixel, no argument about attribution. The creator sees the same ledger you do." data-c="Brands pay you a share of the ad spend your video runs on. Residual pulls the spend from Meta, TikTok and Google every day and shows you the line for each ad, so the number you're paid on is a number you can check. Weekly payout, every Friday, 0% creator fee.">Residual ties each approved video to the ad IDs it runs under on Meta, TikTok and Google, pulls the spend daily from the platform APIs, and pays creators their share of that number. No Shopify, no pixel, no argument about attribution. The creator sees the same ledger you do.</p>
+    <div class="ctas">
+      <a class="btn acc" href="#waitlist" data-b="Request brand access" data-c="Join the creator pool">Request brand access</a>
+      <a class="btn alt" href="https://claude.ai/artifact/76zKkKdGec18hLKGCssgCJ" target="_blank" rel="noopener">Open the working prototype ↗</a>
+      <span class="note" data-b="Free to start · 1.0% of ad spend" data-c="Free · weekly payout · 0% fee">Free to start · 1.0% of ad spend</span>
+    </div>
+    <div class="facts">
+      <div><b data-b="1.0%" data-c="$0">1.0%</b><span data-b="of ad spend. Trybe charges 1.25%. Nothing else on performance rules." data-c="creator fee, ever. Kill fees pass through to you in full.">of ad spend. Trybe charges 1.25%. Nothing else on performance rules.</span></div>
+      <div><b>14 days</b><span data-b="to run an approved video to $50 of spend, or the kill fee pays the creator automatically." data-c="for the brand to run your approved video, or the kill fee pays you automatically.">to run an approved video to $50 of spend, or the kill fee pays the creator automatically.</span></div>
+      <div><b>Fri</b><span data-b="Weekly payout run, via Stripe, 170+ countries. You never cut an invoice." data-c="Weekly payout, via Stripe, in your country. Yesterday's spend is in your ledger by 06:00.">Weekly payout run, via Stripe, 170+ countries. You never cut an invoice.</span></div>
+    </div>
   </div>
-  <div class="ledger" aria-label="Example creator ledger">
-    <div class="hd"><span>a creator's ledger</span><span id="lclock">example data</span></div>
-    <p class="big" id="lbig">$1,284.60</p>
-    <div class="lbl">earned this month from 3 running videos on 3 platforms · next payout Fri</div>
-    <table><tbody id="lrows">
-      <tr><td>28 Oct</td><td class="plat">Meta · 1202…5667</td><td>$612 spend</td><td>+$61.20</td></tr>
-      <tr><td>28 Oct</td><td class="plat">TikTok · 1812…8899</td><td>$388 spend</td><td>+$38.80</td></tr>
-      <tr><td>27 Oct</td><td class="plat">Meta · 1202…5667</td><td>$574 spend</td><td>+$57.40</td></tr>
-      <tr><td>27 Oct</td><td class="plat">Google · 2210…0412</td><td>$201 spend</td><td>+$20.10</td></tr>
-    </tbody></table>
+
+  <div class="stmt" aria-label="Example creator ledger">
+    <div class="hd"><b>Statement · sofia.films</b><span>Period 1–29 Oct 2026<br>Example data</span></div>
+    <div class="sum">
+      <div><div class="lbl">Earned this period</div><div class="big" id="lbig">$1,284.60</div></div>
+      <div class="r">3 videos · 4 ad IDs<br>Meta · TikTok · Google<br>Next payout <b style="color:var(--ink)">Fri 30 Oct</b></div>
+    </div>
+    <table>
+      <thead><tr><th>Date</th><th>Ad ID · set</th><th class="num">Spend</th><th class="num">Your 10%</th></tr></thead>
+      <tbody id="lrows">
+        <tr><td>28 Oct</td><td>Meta · 1202…5667<span class="sub">remesa_v2 · CO broad</span></td><td class="num">$612</td><td class="num plus">+$61.20</td></tr>
+        <tr><td>28 Oct</td><td>TikTok · 1812…8899<span class="sub">remesa_v2 · CO Spark</span></td><td class="num">$388</td><td class="num plus">+$38.80</td></tr>
+        <tr><td>27 Oct</td><td>Meta · 1202…5901<span class="sub">remesa_v2 · CO retargeting</span></td><td class="num">$574</td><td class="num plus">+$57.40</td></tr>
+        <tr><td>27 Oct</td><td>Google · 2210…0412<span class="sub">fees_mx · Demand Gen</span></td><td class="num">$201</td><td class="num plus">+$20.10</td></tr>
+      </tbody>
+    </table>
+    <div class="ft"><span>Source: platform APIs, synced 06:00 COT</span><span><i>●</i> live example</span></div>
   </div>
 </div>
 </div>
-
-<section class="band" id="how"><div class="wrap">
-  <h2>One loop, from brief to payout</h2>
-  <p class="sect-lede">Trybe made performance pay normal. Residual makes it verifiable: the number a creator is paid on is the number the ad platform reports for the ad IDs tied to their video.</p>
-  <div class="flow">
-    <div class="step"><b>Brief goes live</b><span>To the matching creators in the pool. First submissions in days, not a 2–4 week recruiting ramp.</span></div>
-    <div class="step"><b>Creator submits</b><span>They pick a hook from your list and see the pay rule and the checklist before filming.</span></div>
-    <div class="step"><b>Compliance gate</b><span>Per-market checklist. Approve stays locked until every item is ticked; Revise names the item.</span></div>
-    <div class="step"><b>Approved, clock starts</b><span>Run it within 14 days or the kill fee pays out. Approved never means shelved.</span></div>
-    <div class="step"><b>Run and sync</b><span>Launch to Meta, TikTok or Google. Daily spend by ad ID lands in a ledger both sides can read.</span></div>
-    <div class="step"><b>Weekly payout</b><span>Creator share of spend, via Stripe Connect. No invoices, no chasing.</span></div>
-  </div>
-</div></section>
-
-<section class="dark"><div class="wrap">
-  <h2>Built for the advertisers Trybe can't serve</h2>
-  <p class="sect-lede">Trybe attributes on Shopify sales and runs on Meta. If you sell an app, a subscription, a financial product or you buy media in more than one platform, you were never the customer. You are ours.</p>
-  <div class="grid3">
-    <div class="prom"><div class="k">01 · attribution</div><h3>Spend, not sales</h3><p>Pay rules key on ad-platform spend by ad ID. No pixel, no store sync, no last-click argument. Works for apps, SaaS, fintech, marketplaces and regulated verticals.</p></div>
-    <div class="prom"><div class="k">02 · channels</div><h3>Meta, TikTok and Google</h3><p>Launch an approved video as a Partnership Ad, a Spark Ad or a Demand Gen asset from one screen. One ledger across all three.</p></div>
-    <div class="prom"><div class="k">03 · compliance</div><h3>A gate, not a text box</h3><p>Disclosure line, legal footer, banned claims, required T&amp;Cs: a checklist per market that a video must pass before approval. Reviewers tick, they don't improvise.</p></div>
-    <div class="prom"><div class="k">04 · creators</div><h3>Open ledger</h3><p>Creators see yesterday's spend on each of their videos and what it earned them. Trust is replaced by a number.</p></div>
-    <div class="prom"><div class="k">05 · creators</div><h3>Approved means paid</h3><p>Every approval starts a 14-day run-or-pay clock. If the brand never runs it, the kill fee pays out automatically.</p></div>
-    <div class="prom"><div class="k">06 · agencies</div><h3>Many brands, one seat</h3><p>Programs hold many briefs and pay rules. Agencies manage several brands from one workspace with their own margin on top.</p></div>
-  </div>
-</div></section>
 
 <section id="compare"><div class="wrap">
-  <h2>Side by side with Trybe</h2>
-  <p class="sect-lede">Trybe's published terms as of October 2026. Where we match them we say so.</p>
-  <div class="cmp"><table>
-    <thead><tr><th></th><th>Residual</th><th>Trybe</th></tr></thead>
-    <tbody>
-      <tr><td>Start</td><td class="us">Free, no seats or minimums</td><td>Free, no seats or minimums</td></tr>
-      <tr><td>Fee on ad-spend pay rules</td><td class="us mono">1.0% of ad spend</td><td class="mono">1.25% of ad spend</td></tr>
-      <tr><td>Fee on flat creator pay</td><td class="us mono">1.5%</td><td class="mono">1.5%</td></tr>
-      <tr><td>Attribution</td><td class="us">Ad-platform spend by ad ID</td><td>Shopify GMV, server-side last click</td></tr>
-      <tr><td>Ad channels</td><td class="us">Meta, TikTok, Google</td><td>Meta Partnership Ads</td></tr>
-      <tr><td>Creator sourcing</td><td class="us">Shared vetted pool, briefs go live in minutes</td><td>Brand recruits its own pool, 10–12 invites a day</td></tr>
-      <tr><td>Approved but never run</td><td class="us">Kill fee pays out after 14 days</td><td>Creator earns nothing</td></tr>
-      <tr><td>Creator view of ad spend</td><td class="us">Daily ledger by ad ID</td><td>Statement only</td></tr>
-      <tr><td>Compliance review</td><td class="us">Per-market checklist gate</td><td>Approve, revise, reject</td></tr>
-      <tr><td>Agency workspaces</td><td class="us">$199/mo, unlimited brands</td><td>Via brand accounts</td></tr>
-    </tbody>
-  </table></div>
+  <div class="sechead">
+    <div class="k">The number is the product</div>
+    <div><h2 data-b="On Trybe your creators get a total. On Residual they get the lines behind it." data-c="On Trybe you get a total. On Residual you get the lines behind it.">On Trybe your creators get a total. On Residual they get the lines behind it.</h2>
+    <p data-b="Trybe's % of ad spend rule shows the creator a statement with no spend behind it, and a video a brand approves but never runs earns nothing. Both are reasons creators stop filming for you. Residual makes the spend visible and the approval binding." data-c="Trybe's % of ad spend rule shows you a statement with no spend behind it, and a video a brand approves but never runs earns nothing. Residual shows you every line and turns an approval into money or a kill fee.">Trybe's % of ad spend rule shows the creator a statement with no spend behind it, and a video a brand approves but never runs earns nothing. Both are reasons creators stop filming for you. Residual makes the spend visible and the approval binding.</p></div>
+  </div>
+  <div class="two">
+    <div>
+      <p class="lab">What a creator sees on a % of ad spend rule today</p>
+      <div class="stmt them">
+        <div class="hd"><b>Earnings</b><span>Oct 2026</span></div>
+        <div class="sum"><div><div class="lbl">Total</div><div class="big">$412.60</div></div><div class="r">Status: Approved<br>Pays: weekly</div></div>
+        <div class="blank">No spend shown. No ad IDs. One video approved 19 days ago, never launched: $0.</div>
+      </div>
+    </div>
+    <div>
+      <p class="lab">The same month on Residual</p>
+      <div class="stmt">
+        <div class="hd"><b>Ledger</b><span>Oct 2026</span></div>
+        <div class="sum"><div><div class="lbl">Total</div><div class="big">$437.60</div></div><div class="r">2 ad IDs running<br>1 kill fee paid</div></div>
+        <table>
+          <thead><tr><th>Date</th><th>Line</th><th class="num">Spend</th><th class="num">Share</th></tr></thead>
+          <tbody>
+            <tr><td>28 Oct</td><td>Meta · 1202…5667<span class="sub">spend sync</span></td><td class="num">$612</td><td class="num plus">+$61.20</td></tr>
+            <tr><td>28 Oct</td><td>TikTok · 1812…8899<span class="sub">spend sync</span></td><td class="num">$388</td><td class="num plus">+$38.80</td></tr>
+            <tr><td>24 Oct</td><td>vale_buspass.mp4<span class="sub">approved 10 Oct, under $50 spent in 14 days</span></td><td class="num">—</td><td class="num plus">+$25.00 kill fee</td></tr>
+            <tr><td>…</td><td>26 more lines<span class="sub">one per ad ID per day</span></td><td class="num">$3,126</td><td class="num plus">+$312.60</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="verdict"><div></div><p>Every line names the platform, the ad ID and the day. If the creator thinks a line is wrong they flag it and both sides see the flag. Brands get the same ledger with a fee column, so finance can reconcile it against Ads Manager without a spreadsheet.</p></div>
 </div></section>
 
-<section class="band"><div class="wrap">
-  <h2>What a brief costs, in one slider</h2>
-  <p class="sect-lede">Set the monthly ad spend you'd run through creator videos and the creator rate. Trybe's median published ad-spend rate is 10%.</p>
-  <div class="calc">
+<section id="how"><div class="wrap">
+  <div class="sechead">
+    <div class="k">How it works</div>
+    <div><h2>One loop, timed in days, and the clock is public.</h2>
+    <p data-b="You write the brief and set the pay rule. The pool does the rest. The only step that loops back is the compliance gate, and the only deadline is yours: run it to $50 within 14 days of approving it." data-c="You pick a brief, film one hook from the list, and submit. The brand ticks a checklist, not a mood. Once approved, they have 14 days to run your video to $50 of spend or you're paid the kill fee.">You write the brief and set the pay rule. The pool does the rest. The only step that loops back is the compliance gate, and the only deadline is yours: run it to $50 within 14 days of approving it.</p></div>
+  </div>
+  <div class="tl">
+    <div><span class="d">Day 0</span><b>Brief goes live</b><span>To matching creators in the pool. Product, 3–10 hooks, pay rule, markets, do/don't list.</span></div>
+    <div><span class="d">Day 1–4</span><b>Video comes back</b><span>Creator picked a hook and saw the checklist before filming.</span></div>
+    <div><span class="d">Day 5</span><b>Compliance gate</b><span>Per-market and per-vertical items. Approve is locked until every item is ticked; Revise names each one.</span></div>
+    <div class="hot"><span class="d">Day 5 · clock starts</span><b>Approved</b><span>14 days to run it to $50 of spend. Launch-then-pause doesn't stop the clock.</span></div>
+    <div><span class="d">Daily, 06:00</span><b>Spend syncs</b><span>One ledger line per ad ID per day, from the platform API. Both sides read the same lines.</span></div>
+    <div class="hot"><span class="d">Every Friday</span><b>Payout</b><span>Creator share of the week's spend, via Stripe. Kill fees included, no fee on them.</span></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sechead">
+    <div class="k" data-b="Built for buyers Trybe can't serve" data-c="Built so you can check the maths">Built for buyers Trybe can't serve</div>
+    <div><h2 data-b="If you sell an app, a subscription or a financial product, you were never Trybe's customer." data-c="Everything you'd want to know before you film is on the brief card.">If you sell an app, a subscription or a financial product, you were never Trybe's customer.</h2></div>
+  </div>
+  <div class="prom" id="promB">
+    <div><span class="t">01</span><div><b>Spend, not sales</b><p>Pay rules key on ad-platform spend by ad ID. No pixel, no store sync, no last-click argument. Works for apps, SaaS, fintech, marketplaces and regulated verticals.</p></div></div>
+    <div><span class="t">02</span><div><b>Meta, TikTok and Google in one ledger</b><p>Attach every ad ID a creative runs under, across ad sets and platforms. One line per ad ID per day; the fee column reconciles to Ads Manager.</p></div></div>
+    <div><span class="t">03</span><div><b>A compliance gate, not a text box</b><p>Disclosure line, legal footer, banned claims, required T&amp;Cs, per market and per vertical. Reviewers tick, the decision is logged with their name and the checklist state.</p></div></div>
+    <div><span class="t">04</span><div><b>Creators who stay</b><p>Open ledger and a binding approval are why a creator films a second video for you. Brand track record (approvals launched, days to launch) will sit on your brief card.</p></div></div>
+    <div><span class="t">05</span><div><b>Pooled, vetted, fast</b><p>A brief goes live to matching creators in minutes. First submissions in days, not Trybe's 2–4 week recruiting ramp.</p></div></div>
+    <div><span class="t">06</span><div><b>Agency workspaces</b><p>Many brands, one seat, your margin on top, client-level ledger exports. $199/mo.</p></div></div>
+  </div>
+  <div class="prom hide" id="promC">
+    <div><span class="t">01</span><div><b>The pay rule, in numbers</b><p>% of spend, flat fee, cap, kill fee, and what the brand actually runs per day. The card does the maths for you before you claim.</p></div></div>
+    <div><span class="t">02</span><div><b>The checklist, before you film</b><p>Every item the brand will tick, per market. A revise names the exact item; a reject needs a reason you can read.</p></div></div>
+    <div><span class="t">03</span><div><b>Approved means paid</b><p>14 days to run your video to $50 of spend, or the kill fee is yours. Launch-then-pause doesn't stop the clock.</p></div></div>
+    <div><span class="t">04</span><div><b>Every line, every day</b><p>Yesterday's spend on each of your videos is in your ledger by 06:00, with the platform and the ad ID. Flag a line if it looks wrong.</p></div></div>
+    <div><span class="t">05</span><div><b>Paid every Friday, in your country</b><p>Stripe payouts in 170+ countries, USD and your local currency shown side by side. 0% creator fee.</p></div></div>
+    <div><span class="t">06</span><div><b>Your work stays yours</b><p>Non-exclusive licence for the brief's run. Brands that keep running your ad keep paying your share.</p></div></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sechead">
+    <div class="k">The maths</div>
+    <div><h2>What a month costs, as a receipt.</h2><p>Trybe's median published rate on ad-spend rules is 10% to the creator. Move the sliders; the receipt follows.</p></div>
+  </div>
+  <div class="rec">
     <div>
-      <label>Monthly ad spend through creator videos <output id="oSpend">$50,000</output><input type="range" id="spend" min="5000" max="500000" step="5000" value="50000"></label>
-      <label>Creator share of ad spend <output id="oRate">10%</output><input type="range" id="rate" min="5" max="25" step="1" value="10"></label>
+      <label>Monthly ad spend through creator videos<output id="oSpend">$50,000</output><input type="range" id="spend" min="5000" max="500000" step="5000" value="50000"></label>
+      <label>Creator share of ad spend<output id="oRate">10%</output><input type="range" id="rate" min="5" max="25" step="1" value="10"></label>
     </div>
-    <div class="out">
-      <div><span>Creators earn</span><b id="oCreators">$5,000</b></div>
-      <div class="acc"><span>Residual fee (1.0%)</span><b id="oUs">$500</b></div>
-      <div><span>Trybe fee (1.25%)</span><b id="oThem">$625</b></div>
-      <div><span>You keep vs Trybe, per month</span><b id="oDiff">$125</b></div>
+    <div class="receipt">
+      <div class="row"><span>Ad spend run through creator videos</span><b id="oSpend2">$50,000</b></div>
+      <div class="row"><span>Creators earn (<span id="oRate2">10%</span> of spend)</span><b id="oCreators">$5,000</b></div>
+      <div class="row acc"><span>Residual fee · 1.0% of spend</span><b id="oUs">$500</b></div>
+      <div class="row"><span>Trybe fee · 1.25% of spend</span><b id="oThem">$625</b></div>
+      <div class="row tot"><span>Kept vs Trybe, per month</span><b id="oDiff">$125</b></div>
     </div>
   </div>
 </div></section>
 
 <section id="pricing"><div class="wrap">
-  <h2>Pricing</h2>
-  <p class="sect-lede">Fees are never stacked. Kill fees pass through to creators in full with no fee.</p>
-  <div class="price">
-    <div class="tier hi"><h3>Brand</h3><div class="amt">1.0%<small> of ad spend</small></div><ul><li>Unlimited programs, briefs and creators</li><li>Meta, TikTok and Google launch</li><li>Compliance checklists for your markets</li><li>Open ledger and weekly Stripe payouts</li><li>1.5% on flat creator pay, 1.5% on optional sales rules</li></ul><a class="btn pri" href="#waitlist">Start free</a></div>
-    <div class="tier"><h3>Agency</h3><div class="amt">$199<small> / month</small></div><ul><li>Everything in Brand</li><li>Unlimited client brands in one workspace</li><li>Your margin on top of creator pay</li><li>White-label creator communication</li><li>Client-level ledger exports</li></ul><a class="btn" href="#waitlist">Talk to us</a></div>
-    <div class="tier"><h3>Creator</h3><div class="amt">$0<small> always</small></div><ul><li>Brief feed for your markets</li><li>See the pay rule and checklist before you film</li><li>Daily spend on every video you've shipped</li><li>Kill fee if approved and never run</li><li>Weekly payout, 170+ countries</li></ul><a class="btn" href="#waitlist">Join the pool</a></div>
+  <div class="sechead">
+    <div class="k">Rate card</div>
+    <div><h2>Free to start. Fees are never stacked.</h2><p>Trybe's published terms as of October 2026 alongside ours. Where we match them we say so.</p></div>
+  </div>
+  <div class="ratewrap"><table class="rate">
+    <thead><tr><th></th><th>Residual</th><th>Trybe</th></tr></thead>
+    <tbody>
+      <tr><td>Start</td><td class="us">Free · no seats, contracts or minimums</td><td>Free · same</td></tr>
+      <tr><td>Fee on ad-spend pay rules</td><td class="us m">1.0% of ad spend</td><td class="m">1.25% of ad spend</td></tr>
+      <tr><td>Fee on flat creator pay</td><td class="us m">1.5%</td><td class="m">1.5%</td></tr>
+      <tr><td>Fee on kill fees</td><td class="us m">0%</td><td>Not a feature</td></tr>
+      <tr><td>Creator fee</td><td class="us m">0%</td><td class="m">0%</td></tr>
+      <tr><td>Agency workspace</td><td class="us"><span class="m">$199/mo</span> · unlimited client brands, margin on top, white-label creator comms</td><td>Retainers run through brand accounts</td></tr>
+      <tr><td>Attribution</td><td class="us">Ad-platform spend by ad ID</td><td>Shopify GMV, server-side last click</td></tr>
+      <tr><td>Ad channels</td><td class="us">Meta · TikTok · Google</td><td>Meta Partnership Ads</td></tr>
+      <tr><td>Approved but never run</td><td class="us">Kill fee pays out after 14 days (floor $10)</td><td>Creator earns nothing</td></tr>
+      <tr><td>Creator view of spend</td><td class="us">Daily ledger by ad ID</td><td>Statement total</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sechead">
+    <div class="k">Why now</div>
+    <div><h2>The market already pays on ad spend. It just can't see it.</h2><p>No customers yet; the founding cohort opens Q1 2027. These are the published numbers the idea rests on.</p></div>
+  </div>
+  <div class="ev">
+    <div><b>500</b><p>Trybe brands pay creators a % of ad spend; the median and most common rate is 10%. None of those creators can see the spend.</p><a href="https://trybedaily.com/blog/how-much-do-trybe-creators-make" target="_blank" rel="noopener">TrybeDaily rate snapshot, 7 Oct 2026</a></div>
+    <div><b>2–4 wks</b><p>From account setup to a first video on Trybe, because each brand recruits its own pool at 10–12 invites a day.</p><a href="https://www.foxwelldigital.com/blog/a-creative-strategists-guide-to-trybe-sourcing-creator-videos-for-brands-and-agencies" target="_blank" rel="noopener">Foxwell Digital strategist's guide</a></div>
+    <div><b>$0</b><p>What a creator earns when a brand approves a video and never runs it, on today's commission-only programs.</p><a href="https://oinkforinfluencers.com/trybe-tutorial-2026/" target="_blank" rel="noopener">Creator account, Oink for Influencers</a></div>
   </div>
 </div></section>
 
-<section class="cta-final" id="waitlist"><div class="wrap">
-  <h2>Residual opens to the first 50 brands in Q1 2027</h2>
-  <p class="sect-lede" style="margin-inline:auto">Leave an email and which side you're on. We'll reply with a founding-brand rate lock.</p>
-  <form id="wl" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:560px;margin:0 auto">
-    <input id="wlEmail" type="email" required placeholder="you@brand.com" style="flex:1 1 220px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:400 15px var(--body)">
-    <select id="wlSide" style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:400 15px var(--body)"><option>Brand</option><option>Agency</option><option>Creator</option></select>
-    <button class="btn pri" type="submit">Request access</button>
-  </form>
-  <p class="fine" id="wlMsg">Prototype page: this form stores nothing yet.</p>
+<section id="waitlist"><div class="wrap">
+  <div class="wl">
+    <div><div class="k" style="font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px">Founding cohort · Q1 2027</div>
+    <h2 data-b="50 brands. 1.0% locked for 24 months." data-c="Creators in CO, MX, US and AU first.">50 brands. 1.0% locked for 24 months.</h2></div>
+    <div>
+      <p style="margin:0 0 16px;color:var(--ink-2);font-size:17px" data-b="Leave a work email. We reply with the rate lock and a 20-minute setup call; your first brief can be live the same day." data-c="Leave an email and your markets. We reply when briefs for your markets open; your profile takes five minutes.">Leave a work email. We reply with the rate lock and a 20-minute setup call; your first brief can be live the same day.</p>
+      <form id="wl">
+        <input id="wlEmail" type="email" required placeholder="you@brand.com">
+        <select id="wlSide"><option>Brand</option><option>Agency</option><option>Creator</option></select>
+        <button class="btn acc" type="submit">Request access</button>
+      </form>
+      <p class="fine" id="wlMsg">Prototype page: this form stores nothing yet.</p>
+    </div>
+  </div>
 </div></section>
 
-<div class="wrap"><footer><span>Residual · a concept competitor to Trybe, built October 2026</span><span>Trybe figures from jointrybe.com and published reviews, Oct 2026</span></footer></div>
+<footer>
+  <div>Residual · a concept competitor to Trybe, October 2026.<br>Prototype and this page are example data; no brands or creators are live.</div>
+  <ul>
+    <li>Trybe fees and product: <a href="https://jointrybe.com/" target="_blank" rel="noopener">jointrybe.com</a></li>
+    <li>Trybe published pay rules: <a href="https://trybedaily.com/blog/how-much-do-trybe-creators-make" target="_blank" rel="noopener">TrybeDaily, 7 Oct 2026</a></li>
+    <li>Brand-side workflow: <a href="https://www.foxwelldigital.com/blog/a-creative-strategists-guide-to-trybe-sourcing-creator-videos-for-brands-and-agencies" target="_blank" rel="noopener">Foxwell Digital</a></li>
+    <li>Creator-side experience: <a href="https://oinkforinfluencers.com/trybe-tutorial-2026/" target="_blank" rel="noopener">Oink for Influencers</a></li>
+  </ul>
+</footer>
+</div>
 
 <script>
-// cost calculator
 const $=id=>document.getElementById(id);
 const money=n=>"$"+Math.round(n).toLocaleString("en-US");
-function calc(){const s=+$("spend").value,r=+$("rate").value;$("oSpend").value=money(s);$("oRate").value=r+"%";$("oCreators").textContent=money(s*r/100);$("oUs").textContent=money(s*0.01);$("oThem").textContent=money(s*0.0125);$("oDiff").textContent=money(s*0.0025);}
+// audience switch: rewrites every [data-b]/[data-c] node and swaps the two headlines / promise lists
+let AUD="brand";
+try{ const s=localStorage.getItem("residual-aud"); if(s==="creator"||s==="brand") AUD=s; }catch(e){}
+function setAud(a){
+  AUD=a; try{localStorage.setItem("residual-aud",a);}catch(e){}
+  document.querySelectorAll("[data-b]").forEach(el=>{ el.textContent=el.getAttribute(a==="brand"?"data-b":"data-c"); });
+  $("h1b").classList.toggle("hide",a!=="brand"); $("h1c").classList.toggle("hide",a!=="creator");
+  $("promB").classList.toggle("hide",a!=="brand"); $("promC").classList.toggle("hide",a!=="creator");
+  $("segBrand").setAttribute("aria-pressed",a==="brand"); $("segCreator").setAttribute("aria-pressed",a==="creator");
+  $("wlSide").value=a==="brand"?"Brand":"Creator";
+  $("wlEmail").placeholder=a==="brand"?"you@brand.com":"you@gmail.com";
+}
+setAud(AUD);
+// receipt
+function calc(){const s=+$("spend").value,r=+$("rate").value;$("oSpend").value=money(s);$("oSpend2").textContent=money(s);$("oRate").value=r+"%";$("oRate2").textContent=r+"%";$("oCreators").textContent=money(s*r/100);$("oUs").textContent=money(s*0.01);$("oThem").textContent=money(s*0.0125);$("oDiff").textContent=money(s*0.0025);}
 $("spend").addEventListener("input",calc);$("rate").addEventListener("input",calc);calc();
-// ledger ticker: adds an example row every few seconds
-const plats=[["Meta","1202…5667"],["TikTok","1812…8899"],["Google","2210…0412"]];
-let total=1284.60, day=29;
+// statement ticker: one example line every few seconds, newest first, five rows max
+const lines=[["Meta","1202…5667","remesa_v2 · CO broad"],["TikTok","1812…8899","remesa_v2 · CO Spark"],["Meta","1202…5901","remesa_v2 · CO retargeting"],["Google","2210…0412","fees_mx · Demand Gen"]];
+let total=1284.60;
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-function tick(){const [p,id]=plats[Math.floor(Math.random()*plats.length)];const spend=180+Math.floor(Math.random()*520);const share=spend*0.1;total+=share;
-  const tr=document.createElement("tr");tr.className="in";tr.innerHTML=`<td>${day} Oct</td><td class="plat">${p} · ${id}</td><td>$${spend} spend</td><td class="new">+$${share.toFixed(2)}</td>`;
+function tick(){const [p,id,set]=lines[Math.floor(Math.random()*lines.length)];const spend=180+Math.floor(Math.random()*520);const share=spend*0.1;total+=share;
+  const tr=document.createElement("tr");tr.className="in";tr.innerHTML=`<td>29 Oct</td><td>${p} · ${id}<span class="sub">${set}</span></td><td class="num">$${spend}</td><td class="num plus">+$${share.toFixed(2)}</td>`;
   const body=$("lrows");body.insertBefore(tr,body.firstChild);while(body.children.length>5)body.removeChild(body.lastChild);
   $("lbig").textContent="$"+total.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});}
-if(!reduce) setInterval(tick,4200);
+if(!reduce) setInterval(tick,4800);
 // waitlist (prototype)
-$("wl").addEventListener("submit",e=>{e.preventDefault();$("wlMsg").textContent=`Noted ${$("wlEmail").value} as a ${$("wlSide").value.toLowerCase()}. In the real product this would land in the waitlist; this prototype keeps nothing.`;});
+$("wl").addEventListener("submit",e=>{e.preventDefault();$("wlMsg").textContent=`Noted ${$("wlEmail").value} as a ${$("wlSide").value.toLowerCase()}. In the real product this lands on the waitlist; this prototype keeps nothing.`;});
 </script>
