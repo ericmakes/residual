@@ -96,16 +96,31 @@ Undercut Trybe on the ad-spend fee, match it on everything else, and add one pai
 | | Residual | Trybe |
 | --- | --- | --- |
 | Start | Free; no seats, contracts or minimums | Free; same |
-| Fee on ad-spend pay rules | **1.0% of ad spend** | 1.25% of ad spend |
+| Fee on ad-spend pay rules | **1.0% of ad spend**, capped at $5,000 per brand per month | 1.25% of ad spend, uncapped |
 | Fee on flat creator pay | 1.5% of creator earnings | 1.5% |
 | Fee on sales-based pay rules | 1.5% of attributed sales (optional add-on) | 1.5% |
 | Kill fees | 0% fee; passed through to the creator in full | Not a feature |
+| Compliance desk (optional) | $25 per video reviewed by a Residual reviewer against the market rule bank, or $750/mo per market unlimited | Not offered |
+| Instant payout (optional, creators) | Stripe's instant-payout cost passed through at no markup; weekly stays free | Weekly only |
 | Agency workspace | $199/mo per agency: unlimited brands, agency margin on top, white-label creator comms | Retainers run through brand accounts |
 | Creator fee | 0% | 0% |
 
-Worked example at Trybe's median rule (10% of ad spend) on a brand spending $50,000/mo through creator videos: creators earn $5,000, Residual earns $500, Trybe would earn $625. At $500,000/mo the fee gap is $1,250/mo in the brand's favour, which is the number the sales deck leads with.
+Worked example at Trybe's median rule (10% of ad spend) on a brand spending $50,000/mo through creator videos: creators earn $5,000, Residual earns $500, Trybe would earn $625. At $500,000/mo the gap is $1,250/mo; past that the cap holds Residual at $5,000 while Trybe keeps climbing, which is the number the sales deck leads with for 8-figure brands.
 
-Unit economics: the fee is pure margin after Stripe (about 0.25% of payout volume plus Connect payout fees) and API costs. Break-even on a two-person team at roughly $4M/mo of ad spend flowing through, or about 80 brands at the $50K example. The agency tier exists to bring brands in batches rather than one at a time.
+Unit economics per $1,000,000/mo of ad spend through the ledger at the 10% median rule:
+
+| Line | Per $1M/mo of spend |
+| --- | --- |
+| Revenue (1.0%) | $10,000 |
+| Stripe Connect payouts on the $100,000 creator share (0.25% + $0.25 × ~800 weekly payouts) | −$450 |
+| Cross-border payouts for LATAM creators, absorbed | −$600 |
+| FX passed at Stripe's rate, absorbed | −$600 |
+| Brand collection by bank debit (cards carry a 3% surcharge) | −$100 |
+| API and infra | −$300 |
+| Fraud and chargeback reserve | −$100 |
+| Gross margin | about $7,850 (78%) |
+
+Fixed cost for a two-person team with tooling is about $32,000/mo, so break-even sits near $4M/mo of spend through the platform, roughly 80 brands at the $50K example. The 20% headline discount to Trybe costs $2,500 per $1M of spend; it is recovered by the compliance desk (about $6 of reviewer cost per $25 review, 75% margin) and the agency tier, neither of which Trybe sells.
 
 ## Go-to-market
 
