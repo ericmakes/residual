@@ -1,0 +1,11 @@
+{
+  "name": "residual",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Residual — performance UGC platform concept (Trybe competitor): prototype, landing page, teardown, gauntlet harness",
+  "scripts": {
+    "build": "bash scripts/build.sh",
+    "gauntlet": "bash scripts/gauntlet.sh"
+  },
+  "devDependencies": { "playwright": "^1.47.0" }
+}
