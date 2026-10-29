@@ -1,0 +1,485 @@
+<title>Residual</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a two-pane ops console. Left rail = role + nav; main = one working screen at a time. Ledger-first: money is set in mono, everything else in Plex Sans. */
+:root{
+  --bg:#f6f7f5; --panel:#ffffff; --ink:#15201d; --muted:#5d6b66; --line:#dde3df;
+  --accent:#0d7a5f; --accent-ink:#ffffff; --accent-soft:#e3f2ec;
+  --brand:#b85c1e; --brand-soft:#f8e9dd;
+  --good:#1f8a4c; --warn:#b7791f; --bad:#b4322e;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f1513;--panel:#161d1a;--ink:#e8ece9;--muted:#9aa7a1;--line:#27312d;--accent:#3fbf96;--accent-ink:#06211a;--accent-soft:#163a30;--brand:#e08a4f;--brand-soft:#3a2416;--good:#4cc27a;--warn:#e0a84a;--bad:#e36a63;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1513;--panel:#161d1a;--ink:#e8ece9;--muted:#9aa7a1;--line:#27312d;--accent:#3fbf96;--accent-ink:#06211a;--accent-soft:#163a30;--brand:#e08a4f;--brand-soft:#3a2416;--good:#4cc27a;--warn:#e0a84a;--bad:#e36a63;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+.rail{border-right:1px solid var(--line);padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:16px;display:flex;flex-direction:column;gap:20px;background:var(--panel)}
+.logo{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+.logo i{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:4px 0 0 0 var(--panel),8px 0 0 0 var(--accent)}
+.role{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.role button{border:0;background:transparent;color:var(--muted);padding:8px;font:600 12px var(--body);letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.role button.on{background:var(--ink);color:var(--bg)}
+nav{display:flex;flex-direction:column;gap:2px}
+nav button{text-align:left;border:0;background:transparent;color:var(--ink);padding:8px 10px;border-radius:6px;font:500 14px var(--body);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+nav button:hover{background:var(--bg)}
+nav button.on{background:var(--accent-soft);color:var(--accent)}
+nav button .n{font:500 11px var(--mono);background:var(--bg);color:var(--muted);padding:1px 6px;border-radius:10px}
+.clock{margin-top:auto;border-top:1px solid var(--line);padding-top:14px;font-size:12px;color:var(--muted)}
+.clock b{display:block;color:var(--ink);font:500 13px var(--mono)}
+.clock button{margin-top:8px;width:100%}
+main{padding-block:24px 48px;padding-left:24px;padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0}
+h1{font-family:var(--display);font-weight:700;font-size:28px;letter-spacing:-.02em;margin:0 0 4px;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 20px;max-width:62ch}
+h2{font-family:var(--display);font-weight:700;font-size:18px;margin:28px 0 10px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:8px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tile small{display:block;color:var(--muted);font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+.tile b{display:block;font:500 22px/1.2 var(--mono);margin-top:4px;font-variant-numeric:tabular-nums}
+.tile .d{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tw{overflow-x:auto;border-radius:10px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;font:600 11px var(--body);padding:2px 8px;border-radius:12px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.good{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.pill.warn{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn);border-color:transparent}
+.pill.bad{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad);border-color:transparent}
+.pill.brand{background:var(--brand-soft);color:var(--brand);border-color:transparent}
+button.btn,.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;border-radius:7px;font:600 13px var(--body);cursor:pointer}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.brand{background:var(--brand);color:#fff;border-color:var(--brand)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:4px 9px;font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card h3{margin:0;font:600 15px var(--body)}
+.card .meta{color:var(--muted);font-size:12px}
+.rule{font:500 13px var(--mono);background:var(--bg);border-radius:6px;padding:6px 8px;display:inline-block}
+.hooks{display:flex;flex-wrap:wrap;gap:4px}
+.hooks span{font-size:12px;border:1px dashed var(--line);border-radius:6px;padding:2px 7px}
+form.panel,.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+label{display:grid;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
+input,select,textarea{font:400 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%;min-width:0}
+textarea{min-height:64px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.check{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;color:var(--ink);font-weight:400}
+.check input{width:auto;margin-top:3px}
+.check.ok{border-color:var(--accent);background:var(--accent-soft)}
+.gate{border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:8px;padding:10px 12px;font-size:13px;background:var(--panel)}
+.gate.ok{border-left-color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1}
+.empty{color:var(--muted);padding:24px;text-align:center;border:1px dashed var(--line);border-radius:10px}
+.money{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.sub-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start}
+.ex{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr}
+  .rail{border-right:0;border-bottom:1px solid var(--line);padding-right:max(16px,env(safe-area-inset-right,0px));flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px}
+  .logo{flex-basis:100%}
+  nav{flex-direction:row;flex-wrap:wrap}
+  .clock{margin-top:0;border-top:0;padding-top:0;flex-basis:100%;display:flex;gap:10px;align-items:center}
+  .clock button{margin:0;width:auto}
+  main{padding-left:max(16px,env(safe-area-inset-left,0px))}
+}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+</style>
+
+<div class="app">
+  <aside class="rail">
+    <div class="logo"><i></i>Residual</div>
+    <div class="role" role="tablist">
+      <button id="roleBrand" class="on" onclick="setRole('brand')">Brand</button>
+      <button id="roleCreator" onclick="setRole('creator')">Creator</button>
+    </div>
+    <nav id="nav"></nav>
+    <label id="reviewerWrap" style="font-size:11px">Reviewer name (goes on the audit log)<input id="reviewer" placeholder="e.g. Priya" onchange="setReviewer(this.value)" style="font-size:13px;padding:6px 8px"></label>
+    <div class="clock">
+      Simulated day <b id="clockDate"></b>
+      <button class="btn sm" id="advBtn" onclick="advanceDay()">Advance one day ▸</button>
+      <span style="display:block;margin-top:6px;font-size:11px">Runs the daily spend sync, the 14-day clock and the weekly payout.</span>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- state ----------
+const START = new Date(2026,9,29); // 29 Oct 2026
+const FEE = 0.01;                  // Residual fee: 1% of ad spend
+const KILL_DAYS = 14;
+const KILL_FLOOR = 10;             // minimum kill fee on any % of ad spend rule: approved can never mean unpaid
+function logAudit(s,action,extra){ (s.audit=s.audit||[]).push(Object.assign({day:S.day,action,by:(S.reviewer||"unnamed reviewer")+" (brand)",checks:s.checks.slice()},extra||{})); }
+const MIN_RUN_SPEND = 50;          // a launch only stops the kill clock once this much has actually been spent on the video
+// Checklist = market base items + vertical items. Snapshotted onto each submission so the audit log is item-level.
+const CHECKS = {
+  CO:["Disclosure line on screen (#Publicidad)","No claim of guaranteed outcomes","Required T&Cs line present"],
+  MX:["Disclosure line on screen (#Publicidad)","No claim of guaranteed outcomes","Promo named is live on the promo page"],
+  US:["#ad disclosure in first 3 seconds","No health or earnings claims","Music licensed for paid use"],
+  AU:["#ad disclosure in first 3 seconds","No financial-return claims","Comparison claims substantiated"]
+};
+const VERTICALS = {
+  consumer:[],
+  fintech:["No return, yield or 'free money' promise; fees stated wherever a price is shown"],
+  gambling:["Legal footer (+18, responsible-gambling line) on every frame","Odds shown only if live at publish"]
+};
+const checklistFor=(b,market)=>[...(CHECKS[market]||[]),...(VERTICALS[b.vertical]||[])];
+const seedCreators = [
+  {id:"c1",name:"Sofía R.",handle:"@sofia.films",markets:["CO","MX"],approval:78,me:true},
+  {id:"c2",name:"Marcus T.",handle:"@marcusdoesads",markets:["US","AU"],approval:64},
+  {id:"c3",name:"Valentina P.",handle:"@valepaz",markets:["CO"],approval:82},
+  {id:"c4",name:"Dev K.",handle:"@dev.unboxed",markets:["US"],approval:55}
+];
+function defaultState(){
+  return {
+    day:0, role:"brand", view:"briefs", lastPayoutDay:0,
+    briefs:[
+      {id:"b1",brand:"Nimbus Pay",vertical:"fintech",product:"Nimbus Pay app (instant transfers)",markets:["CO","MX"],hooks:["Send money to Mexico in 10 seconds","I stopped paying remittance fees","The notification sound that means rent is paid"],rule:{type:"pct",pct:10,flat:0,cap:400,kill:25},dailyBudget:650,open:true},
+      {id:"b2",brand:"Kettle & Oak",vertical:"consumer",product:"Cold-brew concentrate, 1L",markets:["US","AU"],hooks:["My 6am ritual in 30 seconds","Coffee shop maths: $7 vs 90c","Why I quit pods"],rule:{type:"flat+pct",pct:8,flat:60,cap:0,kill:25},dailyBudget:420,open:true},
+      {id:"b3",brand:"Nimbus Pay",vertical:"fintech",product:"Nimbus Pay cashback card",markets:["CO"],hooks:["Where my cashback went this month","The card that pays for my bus pass"],rule:{type:"flat",pct:0,flat:75,cap:0,kill:0},dailyBudget:0,open:false}
+    ],
+    subs:[
+      {id:"s1",briefId:"b1",creatorId:"c1",hook:0,file:"sofia_nimbus_remesa_v2.mp4",submittedDay:-6,status:"running",approvedDay:-5,launchedDay:-4,platform:"Meta",adId:"120212334455667",ads:[{platform:"Meta",adId:"120212334455667",set:"CO broad"},{platform:"Meta",adId:"120212334455901",set:"CO retargeting"}],market:"CO",checks:[true,true,true,true],spend:[],paid:0},
+      {id:"s2",briefId:"b1",creatorId:"c3",hook:2,file:"vale_notificacion.mp4",submittedDay:-4,status:"approved",approvedDay:-3,launchedDay:null,platform:null,adId:null,market:"CO",checks:[true,true,true,true],spend:[],paid:0},
+      {id:"s3",briefId:"b1",creatorId:"c1",hook:1,file:"sofia_fees_mx.mp4",submittedDay:-1,status:"review",approvedDay:null,launchedDay:null,platform:null,adId:null,market:"MX",checks:[false,false,false,false],spend:[],paid:0},
+      {id:"s4",briefId:"b2",creatorId:"c2",hook:1,file:"marcus_coffee_maths.mp4",submittedDay:-9,status:"running",approvedDay:-8,launchedDay:-8,platform:"TikTok",adId:"1812233445566778899",ads:[{platform:"TikTok",adId:"1812233445566778899",set:"US Spark"}],market:"US",checks:[true,true,true],spend:[],paid:0,flatPaid:60},
+      {id:"s5",briefId:"b2",creatorId:"c4",hook:0,file:"dev_6am.mp4",submittedDay:-2,status:"revise",approvedDay:null,launchedDay:null,platform:null,adId:null,market:"US",checks:[false,true,true],note:"#ad disclosure in first 3 seconds",audit:[{day:-1,action:"revise requested",by:"Priya (brand reviewer)",checks:[false,true,true],note:"#ad disclosure in first 3 seconds"}],spend:[],paid:0},
+      {id:"s6",briefId:"b3",creatorId:"c3",hook:1,file:"vale_buspass.mp4",submittedDay:-12,status:"approved",approvedDay:-11,launchedDay:null,platform:null,adId:null,market:"CO",checks:[true,true,true,true],spend:[],paid:0,flatPaid:75}
+    ],
+    reviewer:"",
+    ledger:[] // {day, subId, kind:'spend'|'kill'|'payout', amount, creatorShare, fee}
+  };
+}
+// snapshot the checklist text onto every submission (seed subs get it here; new ones in claimAndSubmit)
+function snapshotItems(st){ for(const s of st.subs){ if(!s.items){ const b=st.briefs.find(x=>x.id===s.briefId); s.items=checklistFor(b,s.market); while(s.checks.length<s.items.length) s.checks.push(s.status==="running"||s.status==="approved"); s.checks.length=s.items.length; } } }
+// seed historical spend so the page opens with a working ledger
+function seedHistory(st){
+  for(const s of st.subs){
+    if(s.status!=="running") continue;
+    for(let d=s.launchedDay; d<0; d++){
+      const b=st.briefs.find(x=>x.id===s.briefId);
+      const amt=Math.round((b.dailyBudget/ runningCount(st,b.id,d)) * (0.75+pseudo(d,s.id)*0.5));
+      addSpend(st,s,d,amt);
+    }
+  }
+  // flat components already paid on approval for seeded running videos
+  for(const s of st.subs){ if(s.flatPaid) st.ledger.push({day:s.approvedDay,subId:s.id,kind:"flat",amount:s.flatPaid,creatorShare:s.flatPaid,fee:s.flatPaid*0.015}); }
+  // the last weekly payout ran 6 days ago, so the next one is tomorrow (Fri)
+  st.lastPayoutDay=-6;
+  for(const s of st.subs){
+    const pre=s.spend.filter(x=>x.day<-6).reduce((a,x)=>a+x.share,0)+((s.flatPaid&&s.approvedDay<-6)?s.flatPaid:0);
+    s.paid=Math.round(pre*100)/100;
+  }
+  st.ledger.push({day:-6,kind:"payout",amount:st.subs.reduce((a,s)=>a+s.paid,0)});
+}
+function runningCount(st,briefId,day){return Math.max(1,st.subs.filter(s=>s.briefId===briefId&&s.launchedDay!==null&&s.launchedDay<=day&&(s.status==="running")).length);}
+function pseudo(d,id){const x=Math.sin(d*12.9898+id.charCodeAt(1)*78.233)*43758.5453;return x-Math.floor(x);}
+function brief(st,id){return st.briefs.find(b=>b.id===id);}
+function creator(id){return seedCreators.find(c=>c.id===id);}
+function shareFor(b,spend){ if(b.rule.type==="flat") return 0; return spend*b.rule.pct/100; }
+// One ledger line per ad ID per day: a video usually runs in several ad sets, each with its own ad ID.
+function addSpend(st,s,day,total){
+  const b=brief(st,s.briefId); const ads=(s.ads&&s.ads.length)?s.ads:[{platform:s.platform,adId:s.adId}];
+  const weights=ads.map((a,i)=>0.6+pseudo(day+i,s.id+i)*0.8); const wsum=weights.reduce((x,y)=>x+y,0);
+  ads.forEach((ad,i)=>{
+    const amt=Math.round(total*weights[i]/wsum); if(!amt) return;
+    let share=shareFor(b,amt);
+    if(b.rule.cap){ const soFar=s.spend.reduce((a,x)=>a+x.share,0); share=Math.max(0,Math.min(share,b.rule.cap-soFar)); }
+    const fee=amt*FEE;
+    s.spend.push({day,amt,share,fee,adId:ad.adId,platform:ad.platform});
+    st.ledger.push({day,subId:s.id,kind:"spend",amount:amt,creatorShare:share,fee,adId:ad.adId,platform:ad.platform});
+  });
+}
+let S;
+try{ const raw=localStorage.getItem("residual-v1"); S=raw?JSON.parse(raw):null; }catch(e){ S=null; }
+if(!S || !S.subs.every(s=>s.items)){ S=defaultState(); snapshotItems(S); seedHistory(S); }
+function save(){ try{localStorage.setItem("residual-v1",JSON.stringify(S));}catch(e){} }
+function resetAll(){ S=defaultState(); snapshotItems(S); seedHistory(S); save(); render(); toast("Reset to the example data"); }
+function setReviewer(v){ S.reviewer=v.trim(); save(); }
+
+// ---------- helpers ----------
+const fmt=n=>"$"+Math.round(n).toLocaleString("en-US");
+const fmt2=n=>"$"+(Math.round(n*100)/100).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+function dateOf(day){const d=new Date(START);d.setDate(d.getDate()+day);return d;}
+const dstr=day=>dateOf(day).toLocaleDateString("en-AU",{day:"numeric",month:"short"});
+function ruleText(r){ if(r.type==="pct") return `${r.pct}% of ad spend${r.cap?` · cap ${fmt(r.cap)}`:""}`; if(r.type==="flat") return `${fmt(r.flat)} per approved video`; return `${fmt(r.flat)} + ${r.pct}% of ad spend${r.cap?` · cap ${fmt(r.cap)}`:""}`; }
+function earned(s){return s.spend.reduce((a,x)=>a+x.share,0)+(s.killPaid||0)+(s.flatPaid||0);}
+function spendTotal(s){return s.spend.reduce((a,x)=>a+x.amt,0);}
+function yesterday(s){const y=s.spend.find(x=>x.day===S.day-1);return y?y.amt:0;}
+function statusPill(s){
+  const m={review:["In review",""],revise:["Revise requested","warn"],approved:["Approved · not yet run","warn"],running:["Running","good"],killed:["Kill fee paid","bad"],rejected:["Rejected","bad"],paused:["Paused",""]};
+  const [t,c]=m[s.status]||[s.status,""]; return `<span class="pill ${c}">${t}</span>`;
+}
+function daysLeft(s){ return s.approvedDay===null?null:KILL_DAYS-(S.day-s.approvedDay); }
+function nextPayoutDay(){ return S.lastPayoutDay+7; }
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200);}
+
+// ---------- simulation ----------
+function advanceDay(){
+  S.day++;
+  for(const s of S.subs){
+    const b=brief(S,s.briefId);
+    if(s.status==="running"){
+      const amt=Math.round((b.dailyBudget/runningCount(S,b.id,S.day-1))*(0.7+Math.random()*0.6));
+      addSpend(S,s,S.day-1,amt);
+    }
+    // run-or-pay clock: keyed on real spend, so launch-then-pause or a $0 budget does not stop it
+    if(["approved","running","paused"].includes(s.status) && daysLeft(s)<=0 && spendTotal(s)<MIN_RUN_SPEND && b.rule.kill>0){
+      s.status="killed"; s.killPaid=b.rule.kill;
+      S.ledger.push({day:S.day,subId:s.id,kind:"kill",amount:b.rule.kill,creatorShare:b.rule.kill,fee:0});
+      (s.audit=s.audit||[]).push({day:S.day,action:"kill fee triggered",by:"Residual (automatic)",checks:s.checks.slice(),note:`${fmt(spendTotal(s))} spent in ${KILL_DAYS} days, below the ${fmt(MIN_RUN_SPEND)} minimum`});
+    }
+  }
+  if(S.day>=nextPayoutDay()){
+    let total=0;
+    for(const s of S.subs){ const due=earned(s)-s.paid; if(due>0){ s.paid+=due; total+=due; } }
+    S.lastPayoutDay=S.day;
+    S.ledger.push({day:S.day,kind:"payout",amount:total});
+    toast(`Weekly payout run: ${fmt2(total)} sent to creators via Stripe`);
+  }
+  save(); render();
+}
+
+// ---------- actions ----------
+function setRole(r){ S.role=r; S.view=r==="brand"?"briefs":"feed"; save(); render(); }
+function setView(v){ S.view=v; save(); render(); }
+function toggleCheck(subId,i,on){ const s=S.subs.find(x=>x.id===subId); s.checks[i]=on; save(); render(); }
+function approve(subId){
+  const s=S.subs.find(x=>x.id===subId); if(!s.checks.every(Boolean)) return;
+  s.status="approved"; s.approvedDay=S.day; s.note=null; logAudit(s,"approved");
+  const b=brief(S,s.briefId);
+  if(b.rule.flat){ s.flatPaid=b.rule.flat; S.ledger.push({day:S.day,subId:s.id,kind:"flat",amount:b.rule.flat,creatorShare:b.rule.flat,fee:b.rule.flat*0.015}); }
+  save(); render(); toast(`Approved. ${b.rule.kill?`Run it within ${KILL_DAYS} days or the ${fmt(b.rule.kill)} kill fee pays out.`:""}`);
+}
+function revise(subId){
+  const s=S.subs.find(x=>x.id===subId);
+  const missing=s.items.filter((t,i)=>!s.checks[i]);
+  if(!missing.length){ toast("Every checklist item is ticked, so there is nothing to revise. Approve it."); return; }
+  s.status="revise"; s.note=missing.join("; "); logAudit(s,"revise requested",{note:s.note}); save(); render(); toast(`Revise sent, naming ${missing.length} item${missing.length===1?"":"s"}: ${missing[0]}${missing.length>1?"…":""}`);
+}
+const REJECT_REASONS=["Off brief: does not use any listed hook","Quality: audio or picture not usable","Duplicate of an earlier submission","Policy: content we cannot run in this market"];
+function reject(subId){
+  const s=S.subs.find(x=>x.id===subId); const sel=document.getElementById("rj-"+subId);
+  if(!sel||!sel.value){ toast("Pick a rejection reason first. The creator sees it."); return; }
+  s.status="rejected"; s.note=sel.value; logAudit(s,"rejected",{note:s.note}); save(); render();
+}
+function toggleBrief(briefId){ const b=brief(S,briefId); b.open=!b.open; save(); render(); toast(b.open?"Brief reopened to the pool":"Brief closed. Running videos keep running; no new submissions."); }
+function launch(subId,platform){
+  const s=S.subs.find(x=>x.id===subId); s.ads=s.ads||[];
+  const adId=(platform==="Meta"?"1202":platform==="TikTok"?"1812":"2210")+String(Math.floor(1e11+Math.random()*9e11));
+  s.ads.push({platform,adId,set:`${s.market} ad set ${s.ads.length+1}`});
+  if(s.status==="approved"||s.status==="paused"){ s.status="running"; if(s.launchedDay===null) s.launchedDay=S.day; }
+  s.platform=s.ads[0].platform; s.adId=s.ads[0].adId; // primary, kept for summaries
+  logAudit(s,"launched",{note:`${platform} ad ${adId} attached (${s.ads.length} ad ID${s.ads.length===1?"":"s"} on this video)`}); save(); render();
+  toast(`${platform} ad ${adId} tied to this video. In the real product this is "pick the ad IDs in your connected account"; spend syncs per ad ID.`);
+}
+function pause(subId){ const s=S.subs.find(x=>x.id===subId); s.status="paused"; logAudit(s,"paused"); save(); render(); if(spendTotal(s)<MIN_RUN_SPEND) toast(`Paused. Under ${fmt(MIN_RUN_SPEND)} spent, so the run-or-pay clock keeps running.`); }
+function resume(subId){ const s=S.subs.find(x=>x.id===subId); s.status="running"; logAudit(s,"resumed"); save(); render(); }
+function createBrief(e){
+  e.preventDefault(); const f=e.target;
+  const markets=[...f.querySelectorAll("input[name=mk]:checked")].map(x=>x.value);
+  if(!markets.length){ toast("Pick at least one market so the right checklist applies."); return; }
+  const hooks=f.hooks.value.split("\n").map(x=>x.trim()).filter(Boolean);
+  if(hooks.length<2){ toast("Give creators at least two hooks to choose from."); return; }
+  const type=f.rtype.value;
+  if(type!=="flat" && (+f.kill.value||0)<KILL_FLOOR){ toast(`On a % of ad spend rule the kill fee must be at least $${KILL_FLOOR}, or approved could mean unpaid.`); return; }
+  S.briefs.unshift({id:"b"+Date.now(),brand:f.brand.value||"Your brand",vertical:f.vertical.value,product:f.product.value,markets,hooks,
+    rule:{type,pct:type==="flat"?0:+f.pct.value,flat:type==="pct"?0:+f.flat.value,cap:+f.cap.value||0,kill:+f.kill.value||0},dailyBudget:+f.budget.value||0,open:true});
+  save(); S.view="briefs"; render(); toast("Brief is live to matching creators in the pool");
+}
+function claimAndSubmit(e,briefId){
+  e.preventDefault(); const f=e.target; const b=brief(S,briefId);
+  const market=f.market.value; const items=checklistFor(b,market);
+  S.subs.unshift({id:"s"+Date.now(),briefId,creatorId:"c1",hook:+f.hook.value,file:f.file.value||"untitled.mp4",version:1,submittedDay:S.day,status:"review",approvedDay:null,launchedDay:null,platform:null,adId:null,market,items,checks:Array(items.length).fill(false),spend:[],paid:0});
+  save(); S.view="mine"; render(); toast("Submitted. The brand sees it with the compliance checklist attached.");
+}
+function resubmit(subId){
+  const s=S.subs.find(x=>x.id===subId); s.version=(s.version||1)+1; s.file=s.file.replace(/(_v\d+)?\.mp4$/,`_v${s.version}.mp4`);
+  s.checks=s.checks.map(()=>false); // a new cut is re-checked from scratch
+  s.status="review"; s.note=null; s.submittedDay=S.day;
+  (s.audit=s.audit||[]).push({day:S.day,action:"re-submitted",by:creator(s.creatorId).name+" (creator)",checks:s.checks.slice(),note:`new cut ${s.file}`});
+  save(); render(); toast(`Re-submitted as ${s.file}. The brand re-checks every item.`);
+}
+
+// ---------- render ----------
+function render(){
+  document.getElementById("roleBrand").classList.toggle("on",S.role==="brand");
+  document.getElementById("roleCreator").classList.toggle("on",S.role==="creator");
+  document.getElementById("reviewerWrap").hidden=S.role!=="brand";
+  if(document.activeElement!==document.getElementById("reviewer")) document.getElementById("reviewer").value=S.reviewer||"";
+  document.getElementById("clockDate").textContent=dateOf(S.day).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+  const nav=document.getElementById("nav");
+  const inbox=S.subs.filter(s=>s.status==="review").length;
+  const unrun=S.subs.filter(s=>s.status==="approved").length;
+  const items=S.role==="brand"
+    ?[["briefs","Briefs",S.briefs.length],["inbox","Submissions",inbox],["launch","Launch",unrun],["ledger","Ledger",null],["history","History",null],["new","New brief",null]]
+    :[["feed","Brief feed",S.briefs.filter(b=>b.open).length],["mine","My submissions",S.subs.filter(s=>s.creatorId==="c1").length],["earn","Earnings",null],["myledger","Ledger",null]];
+  nav.innerHTML=items.map(([k,l,n])=>`<button class="${S.view===k?"on":""}" onclick="setView('${k}')">${l}${n!==null?`<span class="n">${n}</span>`:""}</button>`).join("")
+    +`<button onclick="resetAll()" style="color:var(--muted);font-size:12px;margin-top:6px">Reset example data</button>`;
+  const m=document.getElementById("main");
+  const V={briefs:vBriefs,inbox:vInbox,launch:vLaunch,ledger:vLedger,history:vHistory,new:vNew,feed:vFeed,mine:vMine,earn:vEarn,myledger:vMyLedger};
+  m.innerHTML=(V[S.view]||vBriefs)();
+}
+
+function vBriefs(){
+  const live=S.subs.filter(s=>s.status==="running");
+  const spend30=S.ledger.filter(l=>l.kind==="spend"&&l.day>S.day-30).reduce((a,l)=>a+l.amount,0);
+  const share30=S.ledger.filter(l=>(l.kind==="spend"||l.kind==="kill"||l.kind==="flat")&&l.day>S.day-30).reduce((a,l)=>a+l.creatorShare,0);
+  const fee30=S.ledger.filter(l=>l.kind==="spend"&&l.day>S.day-30).reduce((a,l)=>a+l.fee,0);
+  const brands=[...new Set(S.briefs.map(b=>b.brand))];
+  return `<h1>Briefs</h1><p class="sub">${brands.length} brand${brands.length===1?"":"s"}, ${S.briefs.length} brief${S.briefs.length===1?"":"s"}, ${S.briefs.filter(b=>b.open).length} open to the pool. Every number below comes from ad-platform spend tied to a video's ad ID, so the creator sees the same figure you do. Example data: use <b>Advance one day</b> in the sidebar to run the spend sync, the kill-fee clock and Friday's payout.</p>
+  <div class="tiles">
+    <div class="tile"><small>Ad spend · 30d</small><b>${fmt(spend30)}</b><span class="d">across ${live.length} running videos</span></div>
+    <div class="tile"><small>Creator residuals · 30d</small><b>${fmt(share30)}</b><span class="d">${spend30?Math.round(share30/spend30*100):0}% effective rate</span></div>
+    <div class="tile"><small>Residual fee · 30d</small><b>${fmt2(fee30)}</b><span class="d">1.0% of ad spend</span></div>
+    <div class="tile"><small>Awaiting review</small><b>${S.subs.filter(s=>s.status==="review").length}</b><span class="d">${S.subs.filter(s=>s.status==="approved").length} approved, not yet run</span></div>
+  </div>
+  <h2>Briefs</h2>
+  <div class="cards">${S.briefs.map(b=>{
+    const subs=S.subs.filter(s=>s.briefId===b.id);
+    return `<div class="card"><div class="row" style="justify-content:space-between"><span class="pill brand">${b.brand}</span><span class="row">${b.open?'<span class="pill good">Open</span>':'<span class="pill">Closed</span>'}<button class="btn sm" onclick="toggleBrief('${b.id}')">${b.open?"Close":"Reopen"}</button></span></div>
+    <h3>${b.product}</h3><span class="rule">${ruleText(b.rule)}${b.rule.kill?` · kill fee ${fmt(b.rule.kill)}`:""}</span>
+    <div class="meta">Markets ${b.markets.join(", ")} · daily budget ${fmt(b.dailyBudget)} · ${subs.length} submissions, ${subs.filter(s=>s.status==="running").length} running</div>
+    <div class="hooks">${b.hooks.map(h=>`<span>${h}</span>`).join("")}</div></div>`;}).join("")}</div>`;
+}
+
+function vInbox(){
+  const list=S.subs.filter(s=>s.status==="review"||s.status==="revise");
+  return `<h1>Submissions</h1><p class="sub">Approval is gated on the market's compliance checklist. Every box must be ticked before Approve unlocks, and Revise names the first unticked item so the creator knows exactly what to fix.</p>
+  ${list.length?list.map(s=>{
+    const b=brief(S,s.briefId), c=creator(s.creatorId), checks=s.items;
+    const all=s.checks.every(Boolean);
+    return `<div class="panel" style="margin-bottom:12px">
+      <div class="sub-row"><div><div class="row"><span class="pill brand">${b.brand}</span>${statusPill(s)}<span class="pill">${s.market}</span></div>
+      <h3 style="margin:8px 0 2px;font:600 15px var(--body)">${s.file}</h3>
+      <div class="meta" style="color:var(--muted);font-size:12px">${c.name} ${c.handle} · approval rate ${c.approval}% · hook: “${b.hooks[s.hook]}” · submitted ${dstr(s.submittedDay)}</div></div>
+      <span class="rule">${ruleText(b.rule)}</span></div>
+      ${s.status==="revise"?`<div class="gate">Revise sent ${s.note?`naming: <b>${s.note}</b>`:""}. Waiting on the creator.</div>`:`
+      <div class="ex">Compliance checklist · ${s.market} · ${b.vertical}</div>
+      <div class="grid2">${checks.map((t,i)=>`<label class="check ${s.checks[i]?"ok":""}"><input type="checkbox" id="ck-${s.id}-${i}" ${s.checks[i]?"checked":""} onchange="toggleCheck('${s.id}',${i},this.checked)"> ${t}</label>`).join("")}</div>
+      <div class="gate ${all?"ok":""}">${all?"Gate passed. Approving starts the 14-day run-or-pay clock.":`${s.checks.filter(Boolean).length} of ${checks.length} ticked. Approve stays locked until the gate passes.`}</div>
+      <div class="row"><button class="btn pri" ${all?"":"disabled"} onclick="approve('${s.id}')">Approve</button><button class="btn" onclick="revise('${s.id}')">Revise (names every unticked item)</button><span class="row" style="gap:4px"><select id="rj-${s.id}" style="width:auto;font-size:12px;padding:5px 8px"><option value="">Reject reason…</option>${REJECT_REASONS.map(r=>`<option>${r}</option>`).join("")}</select><button class="btn" onclick="reject('${s.id}')">Reject</button></span></div>`}
+    </div>`;}).join(""):`<div class="empty">Inbox is clear. Switch to the Creator role and submit a video to see the gate in action.</div>`}`;
+}
+
+function vLaunch(){
+  const list=S.subs.filter(s=>["approved","running","paused","killed"].includes(s.status)).sort((a,b)=>(a.status==="approved"?0:1)-(b.status==="approved"?0:1));
+  return `<h1>Launch</h1><p class="sub">Approved videos sit here until they run. Launching ties one or more ad IDs to the video (a video usually runs in several ad sets); the spend sync writes one ledger line per ad ID per day. Pausing before ${fmt(MIN_RUN_SPEND)} has been spent does not stop the run-or-pay clock.</p>
+  <div class="tw"><table><thead><tr><th>Video and ad IDs</th><th>Creator</th><th>Status and clock</th><th class="num">Spend to date</th><th>Actions</th></tr></thead><tbody>
+  ${list.map(s=>{const b=brief(S,s.briefId),c=creator(s.creatorId),dl=daysLeft(s);
+    return `<tr><td><b>${s.file}</b><br><span style="color:var(--muted);font-size:12px">${b.brand} · ${b.hooks[s.hook]}</span><div style="margin-top:6px">${(s.ads&&s.ads.length)?s.ads.map(a=>`<span class="money" style="font-size:12px;display:block">${a.platform} · ${a.adId}${a.set?` <span style="color:var(--muted)">${a.set}</span>`:""}</span>`).join(""):""}</div></td><td>${c.name}</td><td>${statusPill(s)}<div style="margin-top:6px">${s.status==="approved"&&b.rule.type==="flat"?`<span class="pill good">${fmt(b.rule.flat)} paid on approval · run when ready</span>`:s.status==="approved"?`<span class="pill ${dl<=3?"bad":"warn"}">${dl} day${dl===1?"":"s"} to run or pay ${fmt(b.rule.kill)}</span>`:(s.status==="running"||s.status==="paused")&&spendTotal(s)<MIN_RUN_SPEND&&b.rule.kill>0?`<span class="pill warn">${fmt(spendTotal(s))} of ${fmt(MIN_RUN_SPEND)} min spend · ${dl} day${dl===1?"":"s"} left</span>`:s.status==="killed"?`<span class="pill bad">${fmt(b.rule.kill)} kill fee${s.paid>=earned(s)-0.005?" paid":` · pays ${dstr(nextPayoutDay())}`}</span>`:"—"}</div></td><td class="num">${fmt(spendTotal(s))}</td><td><div class="row">${s.status==="approved"?["Meta","TikTok","Google"].map(p=>`<button class="btn sm pri" onclick="launch('${s.id}','${p}')">${p}</button>`).join(""):s.status==="running"?`<button class="btn sm" onclick="pause('${s.id}')">Pause</button>${["Meta","TikTok","Google"].map(p=>`<button class="btn sm" title="Attach another ad ID on ${p}" onclick="launch('${s.id}','${p}')">+${p}</button>`).join("")}`:s.status==="paused"?`<button class="btn sm" onclick="resume('${s.id}')">Resume</button>`:""}</div></td></tr>`;}).join("")}
+  </tbody></table></div>`;
+}
+
+function vLedger(){
+  const rows=S.ledger.slice().sort((a,b)=>b.day-a.day).slice(0,60);
+  const totSpend=S.ledger.filter(l=>l.kind==="spend").reduce((a,l)=>a+l.amount,0);
+  const totShare=S.ledger.filter(l=>l.creatorShare).reduce((a,l)=>a+l.creatorShare,0);
+  const totFee=S.ledger.filter(l=>l.fee).reduce((a,l)=>a+l.fee,0);
+  return `<h1>Ledger</h1><p class="sub">One line per video per day, straight from the ad platform's reported spend. Creators see the same lines for their own videos. Next payout run ${dstr(nextPayoutDay())}.</p>
+  <div class="tiles"><div class="tile"><small>Total ad spend</small><b>${fmt(totSpend)}</b></div><div class="tile"><small>Creator residuals accrued</small><b>${fmt2(totShare)}</b></div><div class="tile"><small>Residual fees</small><b>${fmt2(totFee)}</b><span class="d">1.0% of spend, 1.5% of flat pay</span></div><div class="tile"><small>Outstanding to creators</small><b>${fmt2(S.subs.reduce((a,s)=>a+earned(s)-s.paid,0))}</b><span class="d">pays ${dstr(nextPayoutDay())}</span></div></div>
+  <div class="tw"><table><thead><tr><th>Date</th><th>Entry</th><th>Video</th><th class="num">Ad spend</th><th class="num">Creator share</th><th class="num">Fee</th></tr></thead><tbody>
+  ${rows.map(l=>{const s=l.subId?S.subs.find(x=>x.id===l.subId):null;
+    const label=l.kind==="spend"?`Spend sync · ${l.platform||s.platform} <span class="money" style="color:var(--muted);font-size:11px">${l.adId||s.adId||""}</span>`:l.kind==="kill"?`<span class="pill bad">Kill fee</span>`:l.kind==="flat"?`<span class="pill">Flat fee on approval</span>`:`<span class="pill good">Weekly payout · Stripe</span>`;
+    return `<tr><td class="money">${dstr(l.day)}</td><td>${label}</td><td>${s?s.file:"all creators"}</td><td class="num">${l.kind==="spend"?fmt(l.amount):l.kind==="payout"?`<span style="color:var(--muted)">${fmt2(l.amount)} paid</span>`:"—"}</td><td class="num">${l.creatorShare?fmt2(l.creatorShare):"—"}</td><td class="num">${l.fee?fmt2(l.fee):"—"}</td></tr>`;}).join("")}
+  </tbody></table></div>`;
+}
+
+function vHistory(){
+  const rows=S.subs.flatMap(s=>(s.audit||[]).map(a=>({a,s}))).sort((x,y)=>y.a.day-x.a.day);
+  const decided=S.subs.filter(s=>["rejected","killed"].includes(s.status));
+  return `<h1>History</h1><p class="sub">Every decision on a submission, with who made it, when, and which checklist items were ticked at the time. Rejected and killed videos stay here; nothing disappears.</p>
+  <h2>Rejected and killed</h2>
+  ${decided.length?`<div class="tw"><table><thead><tr><th>Video</th><th>Creator</th><th>Brief</th><th>Outcome</th><th>Why</th></tr></thead><tbody>${decided.map(s=>{const b=brief(S,s.briefId),c=creator(s.creatorId);return `<tr><td><b>${s.file}</b></td><td>${c.name}</td><td>${b.brand} · ${b.product}</td><td>${statusPill(s)}</td><td>${s.status==="killed"?`Approved ${dstr(s.approvedDay)}, not run within ${KILL_DAYS} days; ${fmt(b.rule.kill)} paid to the creator`:(s.note||"—")}</td></tr>`;}).join("")}</tbody></table></div>`:`<div class="empty">No rejected or killed videos yet.</div>`}
+  <h2>Decision log</h2>
+  ${rows.length?`<div class="tw"><table><thead><tr><th>Date</th><th>Action</th><th>Video</th><th>By</th><th>Checklist at the time</th><th>Note</th></tr></thead><tbody>${rows.map(({a,s})=>`<tr><td class="money">${dstr(a.day)}</td><td><span class="pill ${a.action==="approved"?"good":a.action==="rejected"||a.action.startsWith("kill")?"bad":a.action==="launched"||a.action==="resumed"?"":"warn"}">${a.action}</span></td><td>${s.file}</td><td>${a.by}</td><td style="font-size:12px"><span class="money">${a.checks.filter(Boolean).length}/${a.checks.length}</span>${a.checks.some(c=>!c)&&a.checks.some(Boolean)?`<br><span style="color:var(--muted)">unticked: ${(s.items||[]).filter((t,i)=>!a.checks[i]).join("; ")}</span>`:""}</td><td>${a.note||"—"}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">Decisions you make in Submissions and Launch will be logged here. Seeded example videos predate the log.</div>`}`;
+}
+
+function vMyLedger(){
+  const mine=new Set(S.subs.filter(s=>s.creatorId==="c1").map(s=>s.id));
+  const rows=S.ledger.filter(l=>mine.has(l.subId)).sort((a,b)=>b.day-a.day).slice(0,60);
+  const subs=S.subs.filter(s=>mine.has(s.id));
+  return `<h1>Ledger</h1><p class="sub">The same lines the brand sees, filtered to your videos: one per video per day, from the ad platform's reported spend for the ad ID tied to it. Your share is the pay rule applied to that line.</p>
+  <div class="tw"><table><thead><tr><th>Date</th><th>Entry</th><th>Video</th><th>Ad ID</th><th class="num">Ad spend</th><th class="num">Your share</th></tr></thead><tbody>
+  ${rows.length?rows.map(l=>{const s=S.subs.find(x=>x.id===l.subId);const b=brief(S,s.briefId);
+    const label=l.kind==="spend"?`Spend sync`:l.kind==="kill"?`<span class="pill bad">Kill fee</span>`:`<span class="pill">Flat fee on approval</span>`;
+    return `<tr><td class="money">${dstr(l.day)}</td><td>${label}</td><td>${s.file}</td><td class="money" style="font-size:12px">${l.adId?`${l.platform} · ${l.adId}`:"—"}</td><td class="num">${l.kind==="spend"?fmt(l.amount)+` <span style="color:var(--muted)">× ${b.rule.pct}%</span>`:"—"}</td><td class="num">${fmt2(l.creatorShare)}</td></tr>`;}).join(""):`<tr><td colspan="6" class="empty" style="border:0">No lines yet. Lines appear the day after a video of yours starts running.</td></tr>`}
+  </tbody></table></div>
+  <p class="sub" style="margin-top:12px">Think a line is wrong? In the real product each line links to the ad in the platform and carries a dispute flag; the brand and Residual both see the flag.</p>`;
+}
+
+function vNew(){
+  return `<h1>New brief</h1><p class="sub">One program can hold many briefs, each with its own pay rule. The markets you tick decide which compliance checklist gates approval.</p>
+  <form class="panel" onsubmit="createBrief(event)">
+    <div class="grid2"><label>Brand <input id="nb-brand" name="brand" placeholder="Nimbus Pay"></label><label>Product <input id="nb-product" name="product" required placeholder="What the video is about"></label><label>Vertical (adds its checklist items) <select id="nb-vertical" name="vertical">${Object.keys(VERTICALS).map(v=>`<option value="${v}">${v}${VERTICALS[v].length?` · +${VERTICALS[v].length} check${VERTICALS[v].length===1?"":"s"}`:""}</option>`).join("")}</select></label></div>
+    <label>Hooks, one per line (creators pick one) <textarea id="nb-hooks" name="hooks" required placeholder="I stopped paying remittance fees&#10;Send money home in 10 seconds"></textarea></label>
+    <div class="ex">Markets</div>
+    <div class="row">${Object.keys(CHECKS).map(k=>`<label class="check" style="flex-direction:row"><input type="checkbox" name="mk" value="${k}" id="nb-mk-${k}"> ${k} · ${CHECKS[k].length} base checks</label>`).join("")}</div>
+    <div class="ex">Pay rule</div>
+    <div class="grid2">
+      <label>Type <select id="nb-rtype" name="rtype"><option value="pct">% of ad spend</option><option value="flat+pct">Flat + % of ad spend</option><option value="flat">Flat per approved video</option></select></label>
+      <label>% of ad spend <input id="nb-pct" name="pct" type="number" min="0" max="50" value="10"></label>
+      <label>Flat fee (USD) <input id="nb-flat" name="flat" type="number" min="0" value="0"></label>
+      <label>Cap per video (USD, 0 = none) <input id="nb-cap" name="cap" type="number" min="0" value="0"></label>
+      <label>Kill fee if not run in 14 days (USD, min $10 on % rules) <input id="nb-kill" name="kill" type="number" min="0" value="25"></label>
+      <label>Daily budget you intend to run (USD) <input id="nb-budget" name="budget" type="number" min="0" value="300"></label>
+    </div>
+    <div class="row"><button class="btn pri" type="submit">Publish brief to the pool</button><span style="color:var(--muted);font-size:12px">Residual fee: 1.0% of ad spend on % rules, 1.5% of flat pay. Nothing on kill fees.</span></div>
+  </form>`;
+}
+
+function vFeed(){
+  const me=creator("c1");
+  const list=S.briefs.filter(b=>b.open&&b.markets.some(m=>me.markets.includes(m)));
+  return `<h1>Brief feed</h1><p class="sub">You are ${me.name} ${me.handle}, markets ${me.markets.join(" and ")}, approval rate ${me.approval}%. Only briefs for your markets show here. The pay rule and the checklist are visible before you film.</p>
+  <div class="cards">${list.map(b=>{const mk=b.markets.filter(m=>me.markets.includes(m));
+    return `<div class="card"><span class="pill brand">${b.brand}</span><h3>${b.product}</h3><span class="rule">${ruleText(b.rule)}${b.rule.kill?` · ${fmt(b.rule.kill)} kill fee if approved but not run`:""}</span>
+    <div class="meta">${b.rule.pct?(()=>{const est=b.dailyBudget/3*b.rule.pct/100*30;const capped=b.rule.cap&&est>b.rule.cap;return `Brand runs about ${fmt(b.dailyBudget)}/day across its running videos; at ${b.rule.pct}% one video carrying a third of that earns ~${fmt(capped?b.rule.cap:est)}${capped?` (the ${fmt(b.rule.cap)} lifetime cap, reached in ~${Math.ceil(b.rule.cap/(est/30))} days)`:"/month"}.`;})():`Pays ${fmt(b.rule.flat)} when approved.`}</div>
+    <form onsubmit="claimAndSubmit(event,'${b.id}')" style="display:grid;gap:8px">
+      <label>Hook <select id="hk-${b.id}" name="hook">${b.hooks.map((h,i)=>`<option value="${i}">${h}</option>`).join("")}</select></label>
+      <label>Market <select id="mk-${b.id}" name="market">${mk.map(m=>`<option>${m}</option>`).join("")}</select></label>
+      <details><summary style="font-size:12px;color:var(--muted);cursor:pointer">Checklist you'll be judged on (${b.vertical})</summary>${mk.map(m=>`<div class="ex" style="margin-top:6px">${m}</div><ul style="margin:4px 0 0;padding-left:18px;font-size:12px">${checklistFor(b,m).map(t=>`<li>${t}</li>`).join("")}</ul>`).join("")}</details>
+      <label>Video file name <input id="fl-${b.id}" name="file" placeholder="my_video_v1.mp4"></label>
+      <button class="btn pri" type="submit">Claim and submit</button></form></div>`;}).join("")}</div>`;
+}
+
+function vMine(){
+  const list=S.subs.filter(s=>s.creatorId==="c1").sort((a,b)=>b.submittedDay-a.submittedDay);
+  return `<h1>My submissions</h1><p class="sub">Status is never a black box: a revise names the exact checklist item, and an approval starts a 14-day clock you can see.</p>
+  <div class="tw"><table><thead><tr><th>Video</th><th>Brief</th><th>Status</th><th>What happens next</th><th class="num">Earned</th></tr></thead><tbody>
+  ${list.map(s=>{const b=brief(S,s.briefId),dl=daysLeft(s);
+    const next=s.status==="review"?"Brand is reviewing against the checklist":s.status==="revise"?`Fix: <b>${s.note}</b> <button class="btn sm" onclick="resubmit('${s.id}')">Re-submit</button>`:s.status==="approved"?`Brand has ${dl} day${dl===1?"":"s"} to run it, or you get ${fmt(b.rule.kill)}`:s.status==="running"?`Live on ${s.platform}. Yesterday's spend ${fmt(yesterday(s))}`:s.status==="killed"?`Kill fee ${fmt(b.rule.kill)} paid`:s.status==="rejected"?`Reason: ${s.note}`:"—";
+    return `<tr><td><b>${s.file}</b><br><span style="color:var(--muted);font-size:12px">${b.hooks[s.hook]} · ${s.market}</span></td><td>${b.brand}</td><td>${statusPill(s)}</td><td>${next}</td><td class="num">${fmt2(earned(s))}</td></tr>`;}).join("")}
+  </tbody></table></div>`;
+}
+
+function vEarn(){
+  const mine=S.subs.filter(s=>s.creatorId==="c1");
+  const tot=mine.reduce((a,s)=>a+earned(s),0), paid=mine.reduce((a,s)=>a+s.paid,0);
+  const yday=mine.reduce((a,s)=>a+yesterday(s),0);
+  const spend7=mine.flatMap(s=>s.spend).filter(x=>x.day>=S.day-7).reduce((a,x)=>a+x.amt,0);
+  const share7=mine.flatMap(s=>s.spend).filter(x=>x.day>=S.day-7).reduce((a,x)=>a+x.share,0);
+  const running=mine.filter(s=>s.status==="running");
+  return `<h1>Earnings</h1><p class="sub">Your share of the ad spend your videos ran on, by day, from the ad platform's own numbers. Payouts run weekly through Stripe; next one ${dstr(nextPayoutDay())}.</p>
+  <div class="tiles"><div class="tile"><small>Yesterday's spend on your videos</small><b>${fmt(yday)}</b><span class="d">${running.length} running</span></div><div class="tile"><small>Earned · last 7 days</small><b>${fmt2(share7)}</b><span class="d">on ${fmt(spend7)} of spend</span></div><div class="tile"><small>Owed to you</small><b>${fmt2(tot-paid)}</b><span class="d">pays ${dstr(nextPayoutDay())}</span></div><div class="tile"><small>Paid to date</small><b>${fmt2(paid)}</b></div></div>
+  <h2>By video</h2>
+  <div class="cards">${mine.filter(s=>s.spend.length||s.killPaid||s.flatPaid).map(s=>{const b=brief(S,s.briefId);const last7=s.spend.filter(x=>x.day>=S.day-7);const mx=Math.max(1,...last7.map(x=>x.amt));
+    return `<div class="card"><div class="row" style="justify-content:space-between"><h3>${s.file}</h3>${statusPill(s)}</div><div class="meta">${b.brand} · ${ruleText(b.rule)}${(s.ads&&s.ads.length)?` · ${s.ads.length} ad ID${s.ads.length===1?"":"s"}: ${s.ads.map(x=>x.platform).filter((v,i,arr)=>arr.indexOf(v)===i).join(", ")}`:""}</div>
+    <div class="ex">Daily spend, last 7 days</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;align-items:end;height:48px">${Array.from({length:7},(_,i)=>{const d=S.day-7+i;const x=s.spend.find(y=>y.day===d);const h=x?Math.max(4,x.amt/mx*48):2;return `<div title="${dstr(d)}: ${x?fmt(x.amt):"no spend"}" style="height:${h}px;background:${x?"var(--accent)":"var(--line)"};border-radius:3px"></div>`;}).join("")}</div>
+    <div class="row" style="justify-content:space-between;font-size:13px"><span>Spend to date <b class="money">${fmt(spendTotal(s))}</b></span><span>Your share <b class="money">${fmt2(earned(s))}</b></span></div>
+    ${b.rule.cap?`<div class="bar"><i style="width:${Math.min(100,earned(s)/b.rule.cap*100)}%"></i></div><div class="meta">${Math.round(Math.min(100,earned(s)/b.rule.cap*100))}% of the ${fmt(b.rule.cap)} cap</div>`:""}</div>`;}).join("")||'<div class="empty">Nothing earning yet. Claim a brief from the feed.</div>'}</div>`;
+}
+render();
+</script>
