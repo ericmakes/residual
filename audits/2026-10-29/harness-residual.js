@@ -43,10 +43,11 @@ const section = (n) => console.log('— ' + n);
   const seedSpend = st.ledger.filter(l => l.kind === 'spend');
   ok(seedSpend.length >= 10, 'seed ledger thin: ' + seedSpend.length);
   // 2026-10-29 amended (brand-favourable terms): brand fee 0.75% of spend, creator fee 2.5% of gross share
-  ok(seedSpend.every(l => Math.abs(l.fee - l.amount * 0.0075) < 1e-6), 'seed brand fee ≠ 0.75% somewhere');
-  ok(seedSpend.every(l => Math.abs(l.cfee - (l.creatorShare + l.cfee) * 0.025) < 1e-6), 'seed creator fee ≠ 2.5% of gross somewhere');
+  // 2026-10-29 amended (v4 terms): brand fee is waived until $25,000 of the brand's spend has run; creator fee 5%
+  ok(seedSpend.every(l => l.fee === 0 || Math.abs(l.fee - l.amount * 0.0075) < 1e-6), 'seed brand fee neither waived nor 0.75%');
+  ok(seedSpend.every(l => Math.abs(l.cfee - (l.creatorShare + l.cfee) * 0.05) < 1e-6), 'seed creator fee ≠ 5% of gross somewhere');
   // every running seeded sub with a flat component should have flatPaid recorded
-  for (const s of st.subs) { const b = st.briefs.find(x => x.id === s.briefId); if (s.status === 'running' && b.rule.flat) ok(Math.abs(s.flatPaid - b.rule.flat * 0.975) < 1e-6, `seed: ${s.id} running on flat+pct rule but flatPaid=${s.flatPaid}`); }
+  for (const s of st.subs) { const b = st.briefs.find(x => x.id === s.briefId); if (s.status === 'running' && b.rule.flat) ok(Math.abs(s.flatPaid - b.rule.flat * 0.95) < 1e-6, `seed: ${s.id} running on flat+pct rule but flatPaid=${s.flatPaid}`); }
 
   // ---------- Phase 2: systems ----------
   section('P2 gate law');
@@ -83,8 +84,9 @@ const section = (n) => console.log('— ' + n);
   st = await S(); ok(st.subs.find(s => s.id === 's2').status === 'approved', 's2 killed early at day 17');
   await advance(1);
   st = await S(); let s2 = st.subs.find(s => s.id === 's2');
-  ok(s2.status === 'killed' && s2.killPaid === 15, 's2 at day 18: ' + s2.status + ' killPaid=' + s2.killPaid);
-  ok(st.ledger.some(l => l.kind === 'kill' && l.subId === 's2' && l.creatorShare === 15), 'no kill ledger line for s2');
+  // v4: the $10 kill fee is funded by Residual (ledger fee −10), brand top-up 0 on the seed brief
+  ok(s2.status === 'killed' && s2.killPaid === 10, 's2 at day 18: ' + s2.status + ' killPaid=' + s2.killPaid);
+  ok(st.ledger.some(l => l.kind === 'kill' && l.subId === 's2' && l.creatorShare === 10 && l.fee === -10 && l.brandPart === 0), 'kill ledger line for s2 wrong or missing');
   await advance(3);
   st = await S(); s3 = st.subs.find(s => s.id === 's3');
   ok(s3.status === 'killed', 's3 at day 21: ' + s3.status);
@@ -114,9 +116,11 @@ const section = (n) => console.log('— ' + n);
   const s1 = st.subs.find(s => s.id === 's1');
   const share1 = s1.spend.reduce((a, x) => a + x.share, 0);
   const gross1 = s1.spend.reduce((a, x) => a + x.gross, 0);
-  ok(gross1 <= 400 + 1e-6 && Math.abs(share1 - gross1 * 0.975) < 1e-6, 's1 cap/net wrong: gross ' + gross1 + ' net ' + share1);
+  ok(gross1 <= 400 + 1e-6 && Math.abs(share1 - gross1 * 0.95) < 1e-6, 's1 cap/net wrong: gross ' + gross1 + ' net ' + share1);
   ok(share1 > 300, 's1 share suspiciously low after 70 days: ' + share1);
-  ok(st.ledger.filter(l => l.kind === 'spend').every(l => Math.abs(l.fee - l.amount * 0.0075) < 1e-6), 'brand fee ≠ 0.75% of spend somewhere');
+  ok(st.ledger.filter(l => l.kind === 'spend').every(l => l.fee === 0 || Math.abs(l.fee - l.amount * 0.0075) < 1e-6), 'brand fee neither waived nor 0.75%');
+  // free tier: Nimbus Pay lines carry no fee until its cumulative spend passes $25,000, then 0.75% from that line on
+  { const nim = st.ledger.filter(l => l.kind === 'spend' && st.subs.find(x => x.id === l.subId).briefId !== 'b2').sort((a, b) => a.day - b.day); let cum = 0, okTier = true, sawFee = false; for (const l of nim) { const expect = cum >= 25000 ? l.amount * 0.0075 : 0; if (Math.abs(l.fee - expect) > 1e-6) okTier = false; if (l.fee > 0) sawFee = true; cum += l.amount; } ok(okTier && sawFee && cum > 25000, 'free-tier threshold wrong: cum ' + cum + ' sawFee ' + sawFee + ' ok ' + okTier); }
   ok(st.subs.filter(s => s.status === 'running').every(s => s.spend.length >= 60), 'running video missing daily spend lines');
   ok(errs.length === 0, 'page errors during soak: ' + errs.join(' | '));
 
@@ -155,7 +159,7 @@ const section = (n) => console.log('— ' + n);
   await page.locator('tr:has-text("vale_notificacion") button:has-text("Pause")').click(); await page.waitForTimeout(60);
   await advance(18);
   st = await S(); s2 = st.subs.find(s => s.id === 's2');
-  ok(s2.status === 'killed' && s2.killPaid === 15, 'LOOPHOLE: launched+paused with $0 spend escaped the kill clock: ' + s2.status);
+  ok(s2.status === 'killed' && s2.killPaid === 10, 'LOOPHOLE: launched+paused with $0 spend escaped the kill clock: ' + s2.status);
   ok((s2.audit || []).some(a => a.action === 'kill fee triggered'), 'kill not in audit log');
   // a video that genuinely ran past the minimum spend must NOT be killed when paused later
   await fresh(); await role('Brand'); await nav('Launch');
@@ -193,8 +197,8 @@ const section = (n) => console.log('— ' + n);
   for (let i = 0; i < 4; i++) await page.click(`#ck-${ns.id}-${i}`);
   await page.locator(`.panel:has-text("flat_test.mp4") button:has-text("Approve")`).click(); await page.waitForTimeout(60);
   st = await S(); const ns2 = st.subs.find(s => s.id === ns.id);
-  ok(ns2.status === 'approved' && Math.abs(ns2.flatPaid - 73.125) < 1e-6, 'flat approval (net of 2.5%): ' + ns2.status + ' flatPaid=' + ns2.flatPaid);
-  ok(st.ledger.some(l => l.kind === 'flat' && l.subId === ns.id && Math.abs(l.fee - 1.125) < 1e-6 && Math.abs(l.cfee - 1.875) < 1e-6), 'flat fee line missing or fees wrong');
+  ok(ns2.status === 'approved' && Math.abs(ns2.flatPaid - 71.25) < 1e-6, 'flat approval (net of 5%): ' + ns2.status + ' flatPaid=' + ns2.flatPaid);
+  ok(st.ledger.some(l => l.kind === 'flat' && l.subId === ns.id && Math.abs(l.fee - 1.125) < 1e-6 && Math.abs(l.cfee - 3.75) < 1e-6), 'flat fee line missing or fees wrong');
   // ADVERSARIAL: pct brief with kill=0 → approved video never pays, never kills
   await advance(20);
   st = await S(); ok(st.subs.find(s => s.id === ns.id).status === 'approved', 'flat approved video changed status: ' + st.subs.find(s => s.id === ns.id).status);
@@ -210,7 +214,8 @@ const section = (n) => console.log('— ' + n);
   await page.fill('#nb-product', 'Pct no kill'); await page.fill('#nb-hooks', 'a\nb'); await page.click('#nb-mk-US'); await page.selectOption('#nb-rtype', 'pct'); await page.fill('#nb-kill', '0');
   await page.click('button:has-text("Publish brief")'); await page.waitForTimeout(60);
   st = await S(); const pk = st.briefs.find(b => b.product === 'Pct no kill');
-  ok(!pk || pk.rule.kill > 0, 'ADVERSARIAL: % rule accepted with kill fee 0 — an approved video can be shelved forever with no pay (promise #2 hole)');
+  // 2026-10-29 amended (v4): the kill fee is Residual-funded, so a brand top-up of 0 is allowed and the promise still holds (covered by the kill-fee law battery)
+  ok(pk && pk.rule.kill === 0, 'brand top-up of 0 should be accepted now that Residual funds the base kill fee');
 
   section('P3 adversarial: rejected items vanish from brand side');
   await fresh(); await role('Brand'); await nav('Submissions');
@@ -258,7 +263,7 @@ const section = (n) => console.log('— ' + n);
   const o = await lp.evaluate(() => ({ c: document.getElementById('oCreators').textContent, u: document.getElementById('oUs').textContent, t: document.getElementById('oThem').textContent, d: document.getElementById('oDiff').textContent }));
   // 2026-10-29 amended: brand fee 0.75% (capped $5,000); creators keep 97.5%
   ok(o.c === '$24,000' && o.u === '$1,500' && o.t === '$2,500' && o.d === '$1,000', 'calculator: ' + JSON.stringify(o));
-  ok((await lp.textContent('#oNet')) === '$23,400', 'creator net wrong: ' + (await lp.textContent('#oNet')));
+  ok((await lp.textContent('#oNet')) === '$22,800', 'creator net wrong (5% fee): ' + (await lp.textContent('#oNet')));
   // 2026-10-29 amended (landing v3): the animated ticker was removed as an AI tell; the page now shows real prototype screenshots
   const imgs = await lp.evaluate(() => [...document.querySelectorAll('figure.shot img')].map(i => ({ w: i.naturalWidth, alt: (i.alt || '').length })));
   ok(imgs.length === 3 && imgs.every(i => i.w > 1000 && i.alt > 40), 'screenshots missing or without alt: ' + JSON.stringify(imgs));
