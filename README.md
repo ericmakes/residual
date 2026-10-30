@@ -7,12 +7,12 @@ The wedge Trybe cannot take without rebuilding: attribution on **ad-platform spe
 Five promises, each mapped to a Trybe gap:
 
 1. **Open ledger.** Daily spend by ad ID, visible to brand and creator.
-2. **Approved means paid.** Approval starts a 21-day run-or-pay clock; the brand can withdraw within 48h, after which the clock keys on real spend (min $50), so launch-then-pause does not stop it. Residual funds the $10 kill fee itself, so approving costs the brand nothing.
+2. **Approved means run or returned.** Approval starts a 21-day clock; the brand can withdraw within 48h, after which the clock keys on real spend (min $50), so launch-then-pause does not stop it. An approval that lapses returns the video to the creator and shows on the brand's public track record. No one pays for a video that never ran, and Residual never funds a payout.
 3. **Pooled creators.** A brief goes live to matching creators in minutes.
 4. **Compliance gate.** Per-market base checklist + per-vertical items, snapshotted on each submission; Approve stays locked until every item is ticked; Revise names every unticked item; every decision is logged with reviewer, time and the checklist state.
 5. **Many briefs, agency workspaces.** One program, many pay rules.
 
-Pricing (brand-favourable, since brands are the scarce side): brands pay $0 on their first $25,000 of spend, then 0.75% capped at $5,000/brand/mo (Trybe: 1.25% from the first dollar, uncapped); Residual funds the $10 kill fee; perpetual licence to a video once the creator has earned $250 from it (buyout at 3× trailing 30-day share before that); 10 submissions in 7 days or the month's fee is waived; two free revisions. Creators pay 5% of earnings, nothing on kill fees. Also: 1.5% on flat creator pay; compliance desk $25/video or $750/mo per market; agency workspace $199/mo. Unit economics in `docs/teardown.md`: ~79% gross margin, break-even near $3.4M/mo of spend.
+Pricing (bootstrapped and brand-favourable: no money leaves Residual before it arrives, and brands are the scarce side): brands pay $0 on their first $10,000 of spend, then 0.75% capped at $5,000/brand/mo, debited weekly alongside creator payouts (Trybe: 1.25% from the first dollar, uncapped); perpetual licence to a video once the creator has earned $250 from it (buyout at 3× trailing 30-day share before that); two free revisions; optional brand-paid kill fee or incentive in kind (swag, merch, platform credit) shown on the brief, no fee. Creators pay 5% of earnings; cross-border and FX at Stripe's cost. Also: 1.5% on flat creator pay; compliance desk $25/video or $750/mo per market (Eric's own labour at first, and the first revenue); agency workspace $199/mo. Unit economics in `docs/teardown.md`: ~92% gross margin, fixed cost ~$150/mo, cash break-even at the first paying brand.
 
 ## What is here
 
