@@ -84,16 +84,17 @@ const section = (n) => console.log('— ' + n);
   st = await S(); ok(st.subs.find(s => s.id === 's2').status === 'approved', 's2 killed early at day 17');
   await advance(1);
   st = await S(); let s2 = st.subs.find(s => s.id === 's2');
-  // v4: the $10 kill fee is funded by Residual (ledger fee −10), brand top-up 0 on the seed brief
-  ok(s2.status === 'killed' && s2.killPaid === 10, 's2 at day 18: ' + s2.status + ' killPaid=' + s2.killPaid);
-  ok(st.ledger.some(l => l.kind === 'kill' && l.subId === 's2' && l.creatorShare === 10 && l.fee === -10 && l.brandPart === 0), 'kill ledger line for s2 wrong or missing');
+  // 2026-10-29 amended (v5, bootstrapped): no Residual-funded payouts. A lapsed approval reverts rights to the creator; no ledger line unless the brand set its own kill fee
+  ok(s2.status === 'killed' && s2.killPaid === 0 && s2.lapsedDay === 18, 's2 at day 18: ' + s2.status + ' killPaid=' + s2.killPaid + ' lapsed=' + s2.lapsedDay);
+  ok(!st.ledger.some(l => l.kind === 'kill' && l.subId === 's2'), 'a lapse with no brand kill fee must not create a ledger line');
+  ok((s2.audit || []).some(a => a.action === 'approval lapsed'), 'lapse not in audit log');
   await advance(3);
   st = await S(); s3 = st.subs.find(s => s.id === 's3');
   ok(s3.status === 'killed', 's3 at day 21: ' + s3.status);
   ok(st.subs.find(s => s.id === 's6').status === 'approved', 's6 (kill=0 flat) was killed');
-  // creator sees the kill fee as earned
-  await role('Creator'); await nav('Earnings');
-  ok((await text()).includes('Kill fee paid'), 'creator earnings does not show kill fee');
+  // creator sees the lapse and that the video is theirs again
+  await role('Creator'); await nav('My submissions');
+  ok((await text()).includes('Lapsed') && (await text()).includes('yours to sell elsewhere'), 'creator submissions do not show the lapse/reversion');
 
   section('P2 payout law');
   st = await S();
@@ -119,8 +120,8 @@ const section = (n) => console.log('— ' + n);
   ok(gross1 <= 400 + 1e-6 && Math.abs(share1 - gross1 * 0.95) < 1e-6, 's1 cap/net wrong: gross ' + gross1 + ' net ' + share1);
   ok(share1 > 300, 's1 share suspiciously low after 70 days: ' + share1);
   ok(st.ledger.filter(l => l.kind === 'spend').every(l => l.fee === 0 || Math.abs(l.fee - l.amount * 0.0075) < 1e-6), 'brand fee neither waived nor 0.75%');
-  // free tier: Nimbus Pay lines carry no fee until its cumulative spend passes $25,000, then 0.75% from that line on
-  { const nim = st.ledger.filter(l => l.kind === 'spend' && st.subs.find(x => x.id === l.subId).briefId !== 'b2').sort((a, b) => a.day - b.day); let cum = 0, okTier = true, sawFee = false; for (const l of nim) { const expect = cum >= 25000 ? l.amount * 0.0075 : 0; if (Math.abs(l.fee - expect) > 1e-6) okTier = false; if (l.fee > 0) sawFee = true; cum += l.amount; } ok(okTier && sawFee && cum > 25000, 'free-tier threshold wrong: cum ' + cum + ' sawFee ' + sawFee + ' ok ' + okTier); }
+  // free tier: Nimbus Pay lines carry no fee until its cumulative spend passes $10,000 (v5), then 0.75% from that line on
+  { const nim = st.ledger.filter(l => l.kind === 'spend' && st.subs.find(x => x.id === l.subId).briefId !== 'b2').sort((a, b) => a.day - b.day); let cum = 0, okTier = true, sawFee = false; for (const l of nim) { const expect = cum >= 10000 ? l.amount * 0.0075 : 0; if (Math.abs(l.fee - expect) > 1e-6) okTier = false; if (l.fee > 0) sawFee = true; cum += l.amount; } ok(okTier && sawFee && cum > 10000, 'free-tier threshold wrong: cum ' + cum + ' sawFee ' + sawFee + ' ok ' + okTier); }
   ok(st.subs.filter(s => s.status === 'running').every(s => s.spend.length >= 60), 'running video missing daily spend lines');
   ok(errs.length === 0, 'page errors during soak: ' + errs.join(' | '));
 
@@ -159,8 +160,8 @@ const section = (n) => console.log('— ' + n);
   await page.locator('tr:has-text("vale_notificacion") button:has-text("Pause")').click(); await page.waitForTimeout(60);
   await advance(18);
   st = await S(); s2 = st.subs.find(s => s.id === 's2');
-  ok(s2.status === 'killed' && s2.killPaid === 10, 'LOOPHOLE: launched+paused with $0 spend escaped the kill clock: ' + s2.status);
-  ok((s2.audit || []).some(a => a.action === 'kill fee triggered'), 'kill not in audit log');
+  ok(s2.status === 'killed' && s2.killPaid === 0, 'LOOPHOLE: launched+paused with $0 spend escaped the lapse clock: ' + s2.status);
+  ok((s2.audit || []).some(a => a.action === 'approval lapsed'), 'lapse not in audit log');
   // a video that genuinely ran past the minimum spend must NOT be killed when paused later
   await fresh(); await role('Brand'); await nav('Launch');
   await page.locator('tr:has-text("vale_notificacion") button:has-text("Meta")').click(); await advance(2);
@@ -265,6 +266,7 @@ const section = (n) => console.log('— ' + n);
   ok(o.c === '$24,000' && o.u === '$1,500' && o.t === '$2,500' && o.d === '$1,000', 'calculator: ' + JSON.stringify(o));
   ok((await lp.textContent('#oNet')) === '$22,800', 'creator net wrong (5% fee): ' + (await lp.textContent('#oNet')));
   // 2026-10-29 amended (landing v3): the animated ticker was removed as an AI tell; the page now shows real prototype screenshots
+  await lp.evaluate(async () => { for (const i of document.querySelectorAll('figure.shot img')) { i.loading = 'eager'; i.scrollIntoView(); await i.decode().catch(() => {}); } });
   const imgs = await lp.evaluate(() => [...document.querySelectorAll('figure.shot img')].map(i => ({ w: i.naturalWidth, alt: (i.alt || '').length })));
   ok(imgs.length === 3 && imgs.every(i => i.w > 1000 && i.alt > 40), 'screenshots missing or without alt: ' + JSON.stringify(imgs));
   const tells = await lp.evaluate(() => ({ kickers: document.querySelectorAll('.kicker,.k,.eyebrow').length, numbered: /(^|\s)0[1-6](\s|$)/m.test(document.body.innerText) ? 1 : 0, live: /live example|● live/i.test(document.body.innerText) ? 1 : 0 }));
